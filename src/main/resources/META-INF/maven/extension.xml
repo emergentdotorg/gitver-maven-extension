@@ -1,0 +1,5 @@
+<extension>
+  <exportedPackages>
+    <exportedPackage>lol.wud.gitver.maven</exportedPackage>
+  </exportedPackages>
+</extension>

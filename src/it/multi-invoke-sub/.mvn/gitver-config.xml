@@ -1,0 +1,28 @@
+<configuration
+  xmlns="http://emergentdotorg.github.io/gitver/configuration/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://emergentdotorg.github.io/gitver/configuration/1.0.0
+                      https://emergentdotorg.github.io/gitver-configuration-v1.0.0.xsd">
+
+  <refs>
+    <ref>
+      <type>branch</type>
+      <pattern>.+</pattern>
+      <version>${describe.tag.version.maven}</version>
+      <!--<version>${version.release}-${ref}-SNAPSHOT</version>-->
+      <!--
+      <properties>
+        <revision>${version.release}-${ref}-SNAPSHOT</revision>
+        <rev1>${version.release}-${ref}-SNAPSHOT</rev1>
+        <rev2>${version}</rev2>
+      </properties>
+      -->
+    </ref>
+    <ref>
+      <type>tag</type>
+      <pattern><![CDATA[v(?<version>.*)]]></pattern>
+      <version>${ref.version}</version>
+    </ref>
+  </refs>
+
+</configuration>

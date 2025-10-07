@@ -1,0 +1,44 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Declare text files that should be normalized and converted to native line endings on checkout.
+*.config text
+*.java text
+*.md text
+*.txt text
+*.xml text
+*.xml.template text
+*.yaml text
+
+.editorconfig text
+.gitignore text
+
+# Declare files that should always have LF line endings on checkout.
+*.properties text eol=lf
+
+LICENSE text eol=lf
+NOTICE text eol=lf
+
+# Declare files that should always have CRLF line endings on checkout.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sln text eol=crlf
+
+# Declare files that are binary and should not be modified.
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.png binary
+*.t3x binary
+*.t3d binary
+*.exe binary
+*.data binary
+*.ttf binary
+*.eof binary
+*.eot binary
+*.swf binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.ogg binary
+*.flv binary
