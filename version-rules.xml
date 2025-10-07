@@ -1,0 +1,32 @@
+<ruleset
+  xmlns="https://www.mojohaus.org/VERSIONS/RULE/3.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://www.mojohaus.org/VERSIONS/RULE/3.0.0
+                      https://www.mojohaus.org/versions/versions-model/xsd/rule-3.0.0.xsd">
+  <ignoreVersions>
+    <ignoreVersion type="regex">(.*-(M|RC|SNAPSHOT|alpha|beta|rc)(-)?\d*)</ignoreVersion>
+  </ignoreVersions>
+  <rules>
+    <rule groupId="org.slf4j">
+      <ignoreVersions>
+        <ignoreVersion type="range">[2,)</ignoreVersion>
+      </ignoreVersions>
+    </rule>
+    <rule groupId="org.junit.jupiter">
+      <ignoreVersions>
+        <ignoreVersion type="range">[6,)</ignoreVersion>
+      </ignoreVersions>
+    </rule>
+    <rule groupId="org.junit.platform">
+      <ignoreVersions>
+        <ignoreVersion type="range">[6,)</ignoreVersion>
+      </ignoreVersions>
+    </rule>
+    <rule groupId="org.junit.vintage">
+      <ignoreVersions>
+        <ignoreVersion type="range">[6,)</ignoreVersion>
+      </ignoreVersions>
+    </rule>
+  </rules>
+
+</ruleset>

@@ -1,0 +1,112 @@
+name: Maven Deploy
+
+# Releases every push to main: picks the next version, tests it, deploys it to Maven Central and
+# tags the commit. Run it manually to release a specific version instead of the next patch.
+#
+# Secrets: DEPLOY_CENTRAL_ACTOR and DEPLOY_CENTRAL_TOKEN (Central Portal user token),
+# MAVEN_GPG_KEY (ASCII-armored private key) and MAVEN_GPG_PASSPHRASE.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 1.2.3 (default: next patch after the latest tag)'
+        required: false
+        type: string
+
+# Never cancel a release that is underway; queue the next one instead.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # tags and history are needed to determine the version
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          # writes a settings.xml whose 'central' server reads these environment variables
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+
+      - name: Determine version
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${REQUESTED_VERSION}" ]]; then
+            version="${REQUESTED_VERSION#v}"
+          else
+            released="$(git tag --points-at HEAD --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)"
+            if [[ -n "${released}" ]]; then
+              echo "HEAD is already released as ${released}; nothing to do."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            # the highest release tag reachable from HEAD, or none
+            latest="$(git tag --merged HEAD --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+            IFS=. read -r major minor patch <<< "${latest:-v0.0.0}"
+            version="${major#v}.${minor}.$((patch + 1))"
+            echo "Latest release tag: ${latest:-none}"
+          fi
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '${version}', expected MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v${version}" > /dev/null; then
+            echo "::error::Tag v${version} already exists"
+            exit 1
+          fi
+          echo "Releasing version ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        if: steps.version.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./mvnw -B -ntp -e clean verify -Prun-its,flatten -Drevision="${VERSION}"
+
+      # Signs the artifacts and uploads them to the Central Portal. DEPLOY_SERVER=central activates
+      # the deploy and deploy-central profiles; tests already ran in the previous step, which had
+      # no access to the secrets.
+      - name: Deploy to Maven Central
+        if: steps.version.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          DEPLOY_SERVER: central
+          CENTRAL_USERNAME: ${{ secrets.DEPLOY_CENTRAL_ACTOR }}
+          CENTRAL_PASSWORD: ${{ secrets.DEPLOY_CENTRAL_TOKEN }}
+          MAVEN_GPG_KEY: ${{ secrets.MAVEN_GPG_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: ./mvnw -B -ntp -e deploy -Pflatten -DskipTests -Dinvoker.skip=true -Drevision="${VERSION}"
+
+      # Tagged only after a successful deploy, so a tag always means the release reached Central.
+      - name: Tag release
+        if: steps.version.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "v${VERSION}" -m "Release ${VERSION}"
+          git push origin "v${VERSION}"
+          echo "Released and tagged v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
