@@ -1,5 +1,0 @@
-<extension>
-  <exportedPackages>
-    <exportedPackage>org.emergent.gittle.maven.extension</exportedPackage>
-  </exportedPackages>
-</extension>

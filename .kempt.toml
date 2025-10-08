@@ -1,0 +1,16 @@
+# kempt configuration: https://github.com/ZacSweers/kempt
+# Run `kempt --help` to see all options.
+
+[ktfmt]
+version = "0.65"
+
+[gjf]
+version = "1.37.0"
+
+[gradle-dependencies-sorter]
+version = "0.21.0"
+
+[rustfmt]
+
+[hook]
+mode = "format"   # format | check
