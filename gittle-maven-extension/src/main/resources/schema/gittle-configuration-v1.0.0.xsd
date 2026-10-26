@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
-           xmlns="https://emergentdotorg.github.io/gittle/configuration/1.0.0"
-           targetNamespace="https://emergentdotorg.github.io/gittle/configuration/1.0.0">
+           xmlns="http://emergentdotorg.github.io/gittle/configuration/1.0.0"
+           targetNamespace="http://emergentdotorg.github.io/gittle/configuration/1.0.0">
 
   <xs:element name="configuration">
     <xs:complexType>

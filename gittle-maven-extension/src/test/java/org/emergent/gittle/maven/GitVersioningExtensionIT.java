@@ -662,7 +662,7 @@ class GitVersioningExtensionIT {
       // writeExtensionConfigFile(projectDir, config);
 
       Path mvnDotDir = Files.createDirectories(projectDir.resolve(".mvn"));
-      Path configFile = mvnDotDir.resolve("gittle-maven-extension.xml");
+      Path configFile = mvnDotDir.resolve("gittle.config.xml");
       Configuration config = ProcessorUtil.readConfig(configFile);
 
       // api module
@@ -1795,7 +1795,7 @@ class GitVersioningExtensionIT {
 
   private Path writeExtensionConfigFile(Path projectDir, Configuration config) throws Exception {
     Path mvnDotDir = Files.createDirectories(projectDir.resolve(".mvn"));
-    Path configFile = mvnDotDir.resolve("gittle-maven-extension.xml");
+    Path configFile = mvnDotDir.resolve("gittle.config.xml");
     new XmlMapper()
         .enable(SerializationFeature.INDENT_OUTPUT)
         .writeValue(configFile.toFile(), config);

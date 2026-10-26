@@ -104,8 +104,8 @@
 
   <licenses>
     <license>
-      <name>Apache-2.0</name>
-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <name>The MIT License (MIT)</name>
+      <url>https://opensource.org/licenses/MIT</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -366,7 +366,7 @@
           <artifactId>license-maven-plugin</artifactId>
           <version>${version.license-maven-plugin}</version>
           <configuration>
-            <licenseName>apache_v2</licenseName>
+            <licenseName>mit</licenseName>
             <licenseFile>LICENSE</licenseFile>
             <generateBundle>true</generateBundle>
             <keepBackup>false</keepBackup>

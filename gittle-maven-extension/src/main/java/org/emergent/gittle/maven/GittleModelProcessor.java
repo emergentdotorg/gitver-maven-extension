@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.maven.shared.utils.StringUtils.rightPad;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
-import static org.emergent.gittle.maven.BuildProperties.projectArtifactId;
 import static org.emergent.gittle.maven.MavenUtil.getBuild;
 import static org.emergent.gittle.maven.MavenUtil.pomFile;
 import static org.emergent.gittle.maven.MavenUtil.readModel;
@@ -86,12 +85,6 @@ public class GittleModelProcessor implements ModelProcessor {
   private static final String OPTION_CONFIG_FILE_NAME = "versioning.configFile";
 
   @Inject private GittleSessionHolder sessionHolder;
-
-  // final private Logger log = getLogger(GitVersioningModelProcessor.class);
-
-  // gets injected by setter, see below
-  // @Inject
-  // @Named("core-default")
 
   private boolean initialized = false;
 
@@ -190,7 +183,7 @@ public class GittleModelProcessor implements ModelProcessor {
 
     String configFileName = getCommandOption(OPTION_CONFIG_FILE_NAME);
     if (configFileName == null) {
-      configFileName = projectArtifactId() + ".xml";
+      configFileName = Constants.CONFIG_FILE_NAME;
     }
 
     final File configFile = new File(mvnDirectory, configFileName);
