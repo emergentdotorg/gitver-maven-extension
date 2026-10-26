@@ -6,7 +6,7 @@
                       https://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
   <!--
   <extension>
-    <groupId>org.emergent.gittle.maven</groupId>
+    <groupId>org.emergent.gittle</groupId>
     <artifactId>gittle-maven-extension</artifactId>
     <version>0.9.9</version>
   </extension>

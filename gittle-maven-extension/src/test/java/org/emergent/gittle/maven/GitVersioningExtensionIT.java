@@ -255,7 +255,7 @@ class GitVersioningExtensionIT {
         """
         <extensions>
           <extension>
-            <groupId>org.emergent.gittle.maven</groupId>
+            <groupId>org.emergent.gittle</groupId>
             <artifactId>gittle-maven-extension</artifactId>
             <version>%s</version>
           </extension>

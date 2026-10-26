@@ -10,7 +10,7 @@ class MavenUtilTest {
   void gittleCoords() {
     Coords coords = MavenUtil.gittleCoords();
     assertThat(coords).isNotNull();
-    assertThat(coords.getGroupId()).isEqualTo("org.emergent.gittle.maven");
+    assertThat(coords.getGroupId()).isEqualTo("org.emergent.gittle");
     assertThat(coords.getArtifactId()).isEqualTo("gittle-maven-extension");
     assertThat(coords.getVersion()).isNotEmpty();
   }

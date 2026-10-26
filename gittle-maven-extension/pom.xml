@@ -8,7 +8,6 @@
     <version>${revision}</version>
   </parent>
 
-  <groupId>org.emergent.gittle.maven</groupId>
   <artifactId>gittle-maven-extension</artifactId>
   <packaging>maven-plugin</packaging>
 
