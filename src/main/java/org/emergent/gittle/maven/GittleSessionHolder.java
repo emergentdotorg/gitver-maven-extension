@@ -37,6 +37,7 @@ public class GittleSessionHolder {
     return this;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public GittleSessionHolder clearGittleSession() {
     return setGittleSession(null);
   }

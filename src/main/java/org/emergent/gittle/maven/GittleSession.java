@@ -19,7 +19,7 @@ public class GittleSession {
   Properties systemProperties;
   @Nullable File multiModuleProjectDirectory;
 
-  @Default Map<Path, Coords> projectGavs = new TreeMap<>();
+  @Default Map<Path, Coords> projectCoords = new TreeMap<>();
   @Default Map<Path, Properties> projectProperties = new TreeMap<>();
 
   public static GittleSession from(MavenSession session) {

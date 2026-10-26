@@ -33,7 +33,7 @@ public class GittleMavenExtension extends AbstractMavenLifecycleParticipant {
   @Override
   public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
     GittleSession gsession = sessionHolder.getGittleSession().orElseThrow();
-    Map<Path, Coords> projectGavs = gsession.getProjectGavs();
+    Map<Path, Coords> projectGavs = gsession.getProjectCoords();
     Map<Path, Properties> projectProperties = gsession.getProjectProperties();
 
     session

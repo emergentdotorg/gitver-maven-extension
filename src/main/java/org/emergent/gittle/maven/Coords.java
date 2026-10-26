@@ -7,6 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder.Default;
 import lombok.Value;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.model.Dependency;
@@ -19,6 +22,7 @@ import org.apache.maven.shared.utils.StringUtils;
 import org.jspecify.annotations.Nullable;
 
 @Value
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.Builder(toBuilder = true, setterPrefix = "set")
 class Coords implements Comparable<Coords> {
 
@@ -27,15 +31,9 @@ class Coords implements Comparable<Coords> {
           .thenComparing(Coords::getArtifactId)
           .thenComparing(coords -> new ComparableVersion(coords.getVersion()));
 
-  @lombok.Builder.Default String groupId = "";
-  @lombok.Builder.Default String artifactId = "";
-  @lombok.Builder.Default String version = "";
-
-  Coords(@Nullable String groupId, @Nullable String artifactId, @Nullable String version) {
-    this.groupId = nonNullOrEmpty(groupId);
-    this.artifactId = nonNullOrEmpty(artifactId);
-    this.version = nonNullOrEmpty(version);
-  }
+  @Default String groupId = "";
+  @Default String artifactId = "";
+  @Default String version = "";
 
   public String getProjectId() {
     return sansVersion().toString();

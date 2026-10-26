@@ -5,7 +5,6 @@ import com.pivovarit.function.ThrowingFunction;
 import com.pivovarit.function.ThrowingRunnable;
 import com.pivovarit.function.ThrowingSupplier;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,13 +50,5 @@ public class Throwing {
       }
       return Optional.ofNullable(result);
     };
-  }
-
-  public static <R> R tryUnchecked(Callable<R> block) {
-    try {
-      return block.call();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 }
