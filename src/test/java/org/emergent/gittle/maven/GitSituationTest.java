@@ -1,9 +1,9 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.MASTER;
-import static org.emergent.gittle.commons.GitUtil.NO_COMMIT;
+import static org.emergent.gittle.maven.GitUtil.NO_COMMIT;
 
 import java.io.IOException;
 import java.nio.file.Path;

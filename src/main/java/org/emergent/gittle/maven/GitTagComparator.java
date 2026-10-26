@@ -1,4 +1,4 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -14,11 +14,11 @@ import org.eclipse.jgit.revwalk.RevWalk;
 
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public class TagComparator implements Comparator<Ref> {
+public class GitTagComparator implements Comparator<Ref> {
 
   RevWalk revWalk;
 
-  public TagComparator(Repository repository) {
+  public GitTagComparator(Repository repository) {
     this(new RevWalk(repository));
   }
 

@@ -3,13 +3,12 @@ package org.emergent.gittle.maven;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.regex.Pattern;
-import org.emergent.gittle.commons.GitRefType;
 import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescriptionList;
 import org.junit.jupiter.api.Test;
 
-public class ConfigurationTest {
+class ConfigurationTest {
 
   @Test
   public void testDefaults() throws Exception {

@@ -1,4 +1,4 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import com.pivovarit.function.ThrowingConsumer;
 import com.pivovarit.function.ThrowingFunction;

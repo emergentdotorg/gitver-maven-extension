@@ -1,4 +1,4 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;

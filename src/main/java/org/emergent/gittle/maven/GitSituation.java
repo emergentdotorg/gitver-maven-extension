@@ -1,13 +1,13 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static org.emergent.gittle.commons.GitUtil.NO_COMMIT;
-import static org.emergent.gittle.commons.GitUtil.worktreesFix_getWorkTree;
-import static org.emergent.gittle.commons.GitUtil.worktreesFix_resolveHead;
+import static org.emergent.gittle.maven.GitUtil.NO_COMMIT;
+import static org.emergent.gittle.maven.GitUtil.worktreesFix_getWorkTree;
+import static org.emergent.gittle.maven.GitUtil.worktreesFix_resolveHead;
 
 import java.io.File;
 import java.io.IOException;

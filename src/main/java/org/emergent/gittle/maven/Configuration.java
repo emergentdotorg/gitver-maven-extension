@@ -2,7 +2,7 @@ package org.emergent.gittle.maven;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
-import static org.emergent.gittle.commons.GitRefType.COMMIT;
+import static org.emergent.gittle.maven.GitRefType.COMMIT;
 import static org.emergent.gittle.maven.MavenUtil.memoize;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -28,8 +28,6 @@ import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.emergent.gittle.commons.GitRefType;
-import org.emergent.gittle.commons.Throwing;
 import org.jspecify.annotations.NullUnmarked;
 
 @Getter

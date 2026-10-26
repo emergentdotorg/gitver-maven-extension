@@ -1,4 +1,4 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
@@ -126,7 +126,7 @@ public final class GitUtil {
   public static Map<ObjectId, List<String>> reverseTagRefMap(Repository repository)
       throws IOException {
     Repository commonRepository = worktreesFix_getCommonRepository(repository);
-    TagComparator tagComparator = new TagComparator(commonRepository);
+    GitTagComparator tagComparator = new GitTagComparator(commonRepository);
     return tags(commonRepository).stream()
         .collect(
             groupingBy(

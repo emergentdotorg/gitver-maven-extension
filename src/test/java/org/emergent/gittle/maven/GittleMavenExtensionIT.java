@@ -1,9 +1,9 @@
 package org.emergent.gittle.maven;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.emergent.gittle.commons.GitRefType.BRANCH;
-import static org.emergent.gittle.commons.GitRefType.TAG;
 import static org.emergent.gittle.maven.Constants.GIT_VERSIONING_POM_NAME;
+import static org.emergent.gittle.maven.GitRefType.BRANCH;
+import static org.emergent.gittle.maven.GitRefType.TAG;
 import static org.emergent.gittle.maven.MavenUtil.readModel;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -19,7 +19,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.shared.verifier.Verifier;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.emergent.gittle.commons.GitRefType;
 import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +29,7 @@ import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.io.TempDirFactory;
 
-class GitVersioningExtensionIT {
+class GittleMavenExtensionIT {
 
   static class TempITFactory implements TempDirFactory {
 

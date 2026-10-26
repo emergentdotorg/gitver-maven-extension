@@ -2,7 +2,6 @@ package org.emergent.gittle.maven;
 
 import static java.util.Objects.requireNonNull;
 
-import org.emergent.gittle.commons.GitRefType;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 
 record GitVersionDetails(

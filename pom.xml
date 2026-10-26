@@ -419,7 +419,7 @@
             </goals>
             <configuration>
               <excludes>
-                <exclude>**/GitVersioningExtensionIT.java</exclude>
+                <exclude>**/GittleMavenExtensionIT.java</exclude>
               </excludes>
               <systemPropertyVariables>
                 <user.home>${project.build.testOutputDirectory}/testProjects/home</user.home>

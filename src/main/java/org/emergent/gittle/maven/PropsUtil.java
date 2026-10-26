@@ -1,9 +1,9 @@
 package org.emergent.gittle.maven;
 
 import static org.apache.maven.shared.utils.StringUtils.leftPad;
-import static org.emergent.gittle.commons.StringUtil.patternGroupValues;
-import static org.emergent.gittle.commons.StringUtil.patternGroups;
-import static org.emergent.gittle.commons.StringUtil.substituteText;
+import static org.emergent.gittle.maven.StringUtil.patternGroupValues;
+import static org.emergent.gittle.maven.StringUtil.patternGroups;
+import static org.emergent.gittle.maven.StringUtil.substituteText;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -20,9 +20,6 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
-import org.emergent.gittle.commons.GitDescription;
-import org.emergent.gittle.commons.GitSituation;
-import org.emergent.gittle.commons.Lazy;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
-class GitVersioningModelProcessorTest {
+class GittleModelProcessorTest {
 
   @Test
   void versionPattern_matchesFourSegmentTag() {

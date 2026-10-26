@@ -1,4 +1,4 @@
-package org.emergent.gittle.commons;
+package org.emergent.gittle.maven;
 
 public record GitDescription(String commit, String tag, int distance) {
 
