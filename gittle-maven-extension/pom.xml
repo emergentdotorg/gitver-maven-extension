@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -9,49 +8,112 @@
     <version>${revision}</version>
   </parent>
 
+  <groupId>org.emergent.gittle.maven</groupId>
   <artifactId>gittle-maven-extension</artifactId>
+  <packaging>maven-plugin</packaging>
 
-  <name>Gittle Maven Extension</name>
+  <name>Maven Git Versioning Extension</name>
+  <description>Maven Git Versioning Extension</description>
+
+  <prerequisites>
+    <maven>3.6.4</maven>
+  </prerequisites>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>The MIT License (MIT)</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Bengt Brodersen</name>
+      <url>https://github.com/qoomon</url>
+      <roles>
+        <role>project creator</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>test-and-verify</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>**/GitVersioningExtensionIT.java</exclude>
+              </excludes>
+              <systemPropertyVariables>
+                <user.home>${project.build.testOutputDirectory}/testProjects/home</user.home>
+                <localRepositoryUrl>file://${project.build.directory}/it-repo</localRepositoryUrl>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-plugin-plugin</artifactId>
+        <configuration>
+          <goalPrefix>gittle</goalPrefix>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 
   <dependencies>
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.emergent.gittle</groupId>
-      <artifactId>gittle-core</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <!-- must be 'provided' scope here -->
-        <exclusion>
-          <groupId>org.apache.maven</groupId>
-          <artifactId>maven-artifact</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>com.pivovarit</groupId>
+      <artifactId>throwing-function</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
+      <groupId>de.pdark</groupId>
+      <artifactId>decentxml</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <scope>provided</scope>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-builder-support</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -61,27 +123,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
+      <artifactId>maven-plugin-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model-builder</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.shared</groupId>
-      <artifactId>maven-shared-utils</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.sisu</groupId>
-      <artifactId>org.eclipse.sisu.inject</artifactId>
+      <groupId>org.apache.maven.plugin-tools</groupId>
+      <artifactId>maven-plugin-annotations</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -90,18 +137,29 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.jgit</groupId>
-      <artifactId>org.eclipse.jgit</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
       <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <scope>test</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-verifier</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -125,7 +183,8 @@
                 <configuration>
                   <goals>
                     <goal>-ntp</goal>
-                    <goal>verify</goal>
+                    <goal>-Drevision=0.0.1-SNAPSHOT</goal>
+                    <goal>install</goal>
                   </goals>
                   <pomIncludes>
                     <pomInclude>*/pom.xml</pomInclude>
@@ -140,11 +199,13 @@
                   <streamLogsOnFailures>true</streamLogsOnFailures>
                   <settingsFile>src/it/settings.xml</settingsFile>
                   <cloneProjectsTo>${project.build.directory}/its</cloneProjectsTo>
-                  <localRepositoryPath>${project.build.directory}/local-invoker-repo</localRepositoryPath>
+                  <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
                   <environmentVariables>
                     <HOME>${project.build.directory}/its/tools</HOME>
+                    <GIT_CEILING_DIRECTORIES>${project.build.directory}/its</GIT_CEILING_DIRECTORIES>
                   </environmentVariables>
                   <properties>
+                    <revision>0.0.1-SNAPSHOT</revision>
                     <user.home>${project.build.directory}/its/tools</user.home>
                   </properties>
                   <extraArtifacts>

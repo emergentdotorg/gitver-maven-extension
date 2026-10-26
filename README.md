@@ -48,14 +48,14 @@ A single-module project example:
     <properties>
         <revision>0.0.1-SNAPSHOT</revision>
     </properties>
-    
+
     <!-- ... -->
 </project>
 ```
 
 A multi-module project example:
 ```xml
-<!-- pom.xml 
+<!-- pom.xml
   Parent
 -->
 <project>
@@ -67,7 +67,7 @@ A multi-module project example:
     <modules>
         <module>lib-a</module>
     </modules>
-    
+
     <properties>
         <revision>0.0.1-SNAPSHOT</revision>
     </properties>
@@ -89,7 +89,7 @@ A multi-module project example:
     </parent>
 
     <artifactId>lib-a</artifactId>
-    
+
     <!-- ... -->
 </project>
 ```
@@ -103,7 +103,7 @@ is used by Maven reactor. Try running `mvn package` on your project.
 
 ## Version Pattern Customization
 
-The default version pattern is `%t(-%B)(-%C)(-%S)(+%H)(.%D)`, but this can be customized by setting the 
+The default version pattern is `%t(-%B)(-%C)(-%S)(+%H)(.%D)`, but this can be customized by setting the
 `gittle.versionPattern` property in the `.mvn/gittle-maven-extension.properties` file.
 
 The following example will generate versions as `major.minor.patch+shorthash`, eg. `1.2.3+a5a29f8`.
@@ -136,7 +136,7 @@ kept excluding the surrounding parenthesis.
 
 ## Version Pattern Examples
 
-| Pattern           | %t = 1.2.3<br/>%b = main<br/>%c = 0 | %b = devel  | %c = 5           | %b = devel<br/>%c = 5  |                                                                                                                 
+| Pattern           | %t = 1.2.3<br/>%b = main<br/>%c = 0 | %b = devel  | %c = 5           | %b = devel<br/>%c = 5  |
 |-------------------|-------------------------------------|-------------|------------------|------------------------|
 | %t(-%B)(-%C)(-%S) | 1.2.3                               | 1.2.3-devel | 1.2.3-5-SNAPSHOT | 1.2.3-devel-5-SNAPSHOT |
 

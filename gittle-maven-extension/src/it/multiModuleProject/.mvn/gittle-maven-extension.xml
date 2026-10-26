@@ -1,0 +1,30 @@
+<configuration xmlns="https://emergentdotorg.github.io/gittle/configuration/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="https://emergentdotorg.github.io/gittle/configuration/1.0.0
+                                   https://emergentdotorg.github.io/gittle-configuration-v1.0.0.xsd">
+  <refs>
+
+    <ref type="tag">
+      <pattern><![CDATA[v(?<version>.*)]]></pattern>
+      <version>${ref.version}</version>
+      <updatePom>true</updatePom>
+    </ref>
+
+    <ref type="branch">
+      <pattern>master</pattern>
+      <version>${version.release}-${ref}-${version.label}</version>
+      <properties>
+        <foo>new_new_new</foo>
+      </properties>
+    </ref>
+
+    <ref type="branch">
+      <pattern>feature/(.+)</pattern>
+      <version>${ref}-SNAPSHOT</version>
+      <properties>
+        <foo>new_new_new</foo>
+      </properties>
+    </ref>
+
+  </refs>
+</configuration>

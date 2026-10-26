@@ -1,0 +1,5 @@
+.gittle-pom.xml
+target/
+test-settings.xml
+log.*
+*.log

@@ -1,0 +1,11 @@
+<configuration xmlns="https://github.com/qoomon/maven-git-versioning-extension"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               >
+    <rev>
+        <version>${version}-SNAPSHOT</version>
+        <properties>
+            <foo.bar>git</foo.bar>
+        </properties>
+    </rev>
+
+</configuration>

@@ -3,40 +3,18 @@ package org.emergent.gittle.maven.plugin;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.emergent.gittle.core.Config;
 import org.emergent.gittle.core.Constants;
 import org.emergent.gittle.core.GittleException;
-import org.emergent.gittle.core.Util;
-import org.emergent.gittle.core.git.GitUtil;
-import org.emergent.gittle.core.strategy.VersionStrategy;
-
-import java.util.Properties;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 @Getter
 @Setter
 public abstract class AbstractGittleMojo extends org.apache.maven.plugin.AbstractMojo {
 
   private static final String DOTTED_PREFIX = Constants.GITTLE + ".";
-  protected static final String NEW_VERSION_PROP = DOTTED_PREFIX + Constants.NEW_VERSION;
-  protected static final String RELEASE_BRANCHES_PROP = DOTTED_PREFIX + Constants.RELEASE_BRANCHES;
-  protected static final String VERSION_PATTERN_PROP = DOTTED_PREFIX + Constants.VERSION_PATTERN;
-  protected static final String TAG_NAME_PATTERN_PROP = DOTTED_PREFIX + Constants.TAG_NAME_PATTERN;
 
   @Parameter(name = "skip", defaultValue = "false", property = "gittle.skip")
   protected boolean skip;
@@ -46,9 +24,6 @@ public abstract class AbstractGittleMojo extends org.apache.maven.plugin.Abstrac
 
   @Parameter(defaultValue = "${session}", required = true, readonly = true)
   protected MavenSession mavenSession;
-
-  @Parameter(defaultValue = "${pluginManager}", required = true, readonly = true)
-  private BuildPluginManager pluginManager;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -61,42 +36,5 @@ public abstract class AbstractGittleMojo extends org.apache.maven.plugin.Abstrac
     }
   }
 
-  protected void execute0() throws Exception {
-  }
-
-  protected GitUtil getGitUtil() {
-    return GitUtil.getInstance(mavenProject.getBasedir());
-  }
-
-  public Config getConfig() {
-    Properties extensionProps = Util.loadProperties(mavenProject.getBasedir().toPath());
-    return Config.from(Util.toMap(extensionProps));
-  }
-
-  protected VersionStrategy getVersionStrategy() {
-    return VersionStrategy.getInstance(getConfig(), mavenProject.getBasedir());
-  }
-
-  protected String replaceTokens(String pattern, VersionStrategy versionStrategy) {
-    return pattern.replace("%v", versionStrategy.version());
-  }
-
-  protected void invokeMojo() throws MojoExecutionException {
-    executeMojo(
-        plugin(
-            groupId("org.codehaus.mojo"),
-            artifactId("flatten-maven-plugin"),
-            version("1.7.3")
-        ),
-        goal("flatten"),
-        configuration(
-            element(name("updatePomFile"), "true"),
-            element(name("pomElements"),
-                element(name("parent"), "keep")
-            ),
-            element(name("flattenMode"), "resolveCiFriendliesOnly")
-        ),
-        executionEnvironment(mavenProject, mavenSession, pluginManager)
-    );
-  }
+  protected void execute0() throws Exception {}
 }
