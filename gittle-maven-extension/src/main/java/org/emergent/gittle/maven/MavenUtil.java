@@ -10,10 +10,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.model.BuildBase;
@@ -28,6 +30,19 @@ import org.jspecify.annotations.Nullable;
 
 @Slf4j
 final class MavenUtil {
+
+  private static final Supplier<Properties> buildProperties =
+      memoize(
+          () -> {
+            ClassLoader loader = MavenUtil.class.getClassLoader();
+            try (InputStream is = loader.getResourceAsStream(Constants.GITTLE_PROPERTIES_PATH)) {
+              Properties properties = new Properties();
+              properties.load(is);
+              return properties;
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
 
   static Model readModel(File pomFile) throws IOException {
     try (FileReader fileReader = new FileReader(pomFile)) {
@@ -92,5 +107,14 @@ final class MavenUtil {
 
   public static <T> Supplier<T> memoize(Supplier<T> delegate) {
     return Lazy.wrap(delegate);
+  }
+
+  public static Coords gittleCoords() {
+    Properties props = buildProperties.get();
+    return Coords.builder()
+        .setGroupId(props.getProperty("project.groupId"))
+        .setArtifactId(props.getProperty("project.artifactId"))
+        .setVersion(props.getProperty("project.version"))
+        .build();
   }
 }

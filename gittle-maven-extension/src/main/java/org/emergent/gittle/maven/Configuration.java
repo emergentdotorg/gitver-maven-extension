@@ -5,7 +5,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.emergent.gittle.commons.GitRefType.COMMIT;
 import static org.emergent.gittle.maven.MavenUtil.memoize;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -95,6 +94,18 @@ public class Configuration {
   @JsonInclude(NON_NULL)
   public static class PatchDescription {
 
+    public PatchDescription() {}
+
+    public PatchDescription(PatchDescription that) {
+      this.describeTagPattern = that.describeTagPattern;
+      this.version = that.version;
+      this.properties = new HashMap<>(that.properties);
+      this.userProperties = new HashMap<>(that.userProperties);
+      this.updatePom = that.updatePom;
+      this.useRevision = that.useRevision;
+      this.describeTagFirstParent = that.describeTagFirstParent;
+    }
+
     @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
     public String describeTagPattern;
 
@@ -113,7 +124,6 @@ public class Configuration {
 
     public Boolean updatePom = false;
 
-    @JsonAlias("userev")
     public Boolean useRevision;
 
     public Boolean describeTagFirstParent;
@@ -131,7 +141,7 @@ public class Configuration {
 
   @Getter
   @JsonInclude(NON_NULL)
-  @ToString
+  @ToString(callSuper = true)
   @EqualsAndHashCode(callSuper = true)
   public static class RefPatchDescription extends PatchDescription {
 
@@ -144,14 +154,9 @@ public class Configuration {
     public RefPatchDescription() {}
 
     public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription description) {
+      super(description);
       this.type = type;
       this.pattern = pattern != null ? pattern.pattern() : null;
-      this.describeTagPattern = description.describeTagPattern;
-      this.updatePom = description.updatePom;
-      this.useRevision = description.useRevision;
-      this.describeTagFirstParent = description.describeTagFirstParent;
-      this.version = description.version;
-      this.properties = new HashMap<>(description.properties);
     }
 
     public Pattern pattern() {

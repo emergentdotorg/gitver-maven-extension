@@ -38,7 +38,7 @@ public class GitVersioningMojo extends AbstractMojo {
   }
 
   static Plugin asPlugin() {
-    Coords coords = BuildProperties.projectGAV();
+    Coords coords = MavenUtil.gittleCoords();
     Plugin plugin = new Plugin();
     plugin.setGroupId(coords.getGroupId());
     plugin.setArtifactId(coords.getArtifactId());

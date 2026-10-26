@@ -147,7 +147,7 @@ public class GittleModelProcessor implements ModelProcessor {
   private void init(Model projectModel) throws IOException {
     if (log.isInfoEnabled()) {
       log.info("");
-      log.info(ProcessorUtil.extensionLogHeader(BuildProperties.projectGAV()));
+      log.info(ProcessorUtil.extensionLogHeader(MavenUtil.gittleCoords()));
     }
 
     // In case another ModelProcessor is used (like for example polyglot extension),

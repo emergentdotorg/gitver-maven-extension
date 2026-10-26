@@ -30,7 +30,7 @@ Flow inside Maven (see `gittle-maven-extension/docs/MavenGitVersioningExtension.
 
 1. `GittleMavenExtension` (`AbstractMavenLifecycleParticipant`) — `afterSessionStart` builds a `GittleSession` stored in the injected singleton `GittleSessionHolder`; `afterProjectsRead` records each project's GAV/properties; `afterSessionEnd` clears it.
 2. `GittleModelProcessor` (replaces Maven's `ModelProcessor`) — intercepts POM reading, resolves the version, and rewrites the model so `${revision}` resolves. It also handles writing the flattened/rewritten POM and cross-module parent/dependency version fixups. This is the largest and most intricate class.
-3. `GittleSession` / `Configuration` / `BuildProperties` — session state plus config loading. Config comes from `.mvn/gittle-maven-extension.properties` (e.g. `gittle.versionPattern`, `gittle.releaseBranchRegex`) and an XML config validated by `src/main/resources/schema/gittle-configuration-v1.0.0.xsd`, with defaults in `schema/gittle-defaults.xml`.
+3. `GittleSession` / `Configuration` — session state plus config loading. Config comes from `.mvn/gittle.config.xml` (e.g. `gittle.versionPattern`, `gittle.releaseBranchRegex`) and an XML config validated by `src/main/resources/schema/gittle-configuration-v1.0.0.xsd`, with defaults in `schema/gittle-defaults.xml`.
 4. `commons/` — Git logic independent of Maven: `GitUtil` (JGit), `GitSituation` (branch/hash/tag/commit-count/dirty state), `GitDescription`, `TagComparator`, `StringUtil` (version pattern token expansion, `%t %b %B %c %C %h %H %f %F %S %D`).
 5. `GitVersioningMojo` provides an explicit goal; the normal path needs no mojo execution.
 
