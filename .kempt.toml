@@ -1,0 +1,25 @@
+# kempt configuration: https://github.com/ZacSweers/kempt
+# Run `kempt --help` to see all options.
+
+[gjf]
+version = "1.37.0"
+
+[paths]
+# Global excludes applied before any tool's own filter. The built-in defaults
+# are ["**/build/**", "**/target/**"]; extend them without repeating them.
+#exclude = { extend = ["**/generated/**"] }
+
+[gjf.paths]
+# defaults: include = ["**/*.java"], exclude = []
+exclude = ["**/*Generated.java"]
+
+[whitespace.paths]
+# defaults: include = ["**/*.kt", "**/*.kts", "**/*.java", "**/*.rs"], exclude = []
+include = { extend = ["**/*.md", "**/.gitignore"] }
+
+[whitespace]
+strip-trailing = true   # strip trailing space/tab/CR from every line
+final-newline = true    # ensure files end with one trailing newline
+
+[hook]
+mode = "format"   # format | check
