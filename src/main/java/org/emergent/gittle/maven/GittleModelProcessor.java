@@ -58,8 +58,6 @@ import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.sisu.Priority;
-import org.eclipse.sisu.Typed;
 import org.emergent.gittle.commons.GitSituation;
 import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
@@ -67,13 +65,12 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
-/** Wrapper for {@link ModelProcessor} to adapt versions. */
 @Slf4j
 @NullUnmarked
 @Singleton
-@Priority(1)
+// @Priority(1)
 @Named("core-default")
-@Typed(ModelProcessor.class)
+// @Typed(ModelProcessor.class)
 public class GittleModelProcessor implements ModelProcessor {
 
   private static final String OPTION_NAME_GIT_REF = "git.ref";
