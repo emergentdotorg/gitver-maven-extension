@@ -27,11 +27,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
 import org.emergent.gittle.commons.GitRefType;
 import org.emergent.gittle.commons.Throwing;
 import org.jspecify.annotations.NullUnmarked;
 
+@Getter
 @NullUnmarked
 @ToString
 @EqualsAndHashCode
@@ -63,7 +65,6 @@ public class Configuration {
 
   public Boolean updatePom = false;
 
-  @JsonAlias("userev")
   public Boolean useRevision;
 
   public RefPatchDescriptionList refs = new RefPatchDescriptionList();
@@ -88,6 +89,7 @@ public class Configuration {
     return Optional.ofNullable(describeTagPattern).map(Pattern::compile).orElse(null);
   }
 
+  @Getter
   @ToString
   @EqualsAndHashCode
   @JsonInclude(NON_NULL)
@@ -127,6 +129,7 @@ public class Configuration {
     }
   }
 
+  @Getter
   @JsonInclude(NON_NULL)
   @ToString
   @EqualsAndHashCode(callSuper = true)
@@ -156,6 +159,7 @@ public class Configuration {
     }
   }
 
+  @Getter
   @ToString
   @EqualsAndHashCode
   public static class RefPatchDescriptionList {
@@ -169,6 +173,7 @@ public class Configuration {
     public List<RefPatchDescription> list = new ArrayList<>();
   }
 
+  @Getter
   @ToString
   @EqualsAndHashCode
   public static class RelatedProject {

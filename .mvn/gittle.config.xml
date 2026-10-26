@@ -2,8 +2,8 @@
   xmlns="http://emergentdotorg.github.io/gittle/configuration/1.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://emergentdotorg.github.io/gittle/configuration/1.0.0
-                      https://emergentdotorg.github.io/gittle-configuration-v1_0_0.xsd">
-  <!--
+                      https://emergentdotorg.github.io/gittle-configuration-v1.0.0.xsd">
+<!--
   <useDirty>true</useDirty>
   <exclusions>
       <exclusion>.repository</exclusion>

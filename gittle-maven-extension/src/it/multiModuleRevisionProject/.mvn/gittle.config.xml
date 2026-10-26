@@ -1,9 +1,10 @@
-<configuration xmlns="http://emergentdotorg.github.io/gittle/configuration/1.0.0"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="http://emergentdotorg.github.io/gittle/configuration/1.0.0
-                                   https://emergentdotorg.github.io/gittle-configuration-v1.0.0.xsd">
+<configuration
+  xmlns="http://emergentdotorg.github.io/gittle/configuration/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://emergentdotorg.github.io/gittle/configuration/1.0.0
+                      https://emergentdotorg.github.io/gittle-configuration-v1.0.0.xsd">
 
-  <refs considerTagsOnBranches="true">
+<refs considerTagsOnBranches="true">
 
     <ref type="tag">
       <pattern><![CDATA[v(?<version>.*)]]></pattern>

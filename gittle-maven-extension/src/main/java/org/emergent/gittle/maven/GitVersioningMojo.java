@@ -8,17 +8,12 @@ import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
-import org.apache.maven.model.building.ModelProcessor;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-/**
- * Maven goal plugin to set project POM file path to the git versioned POM file. NOTE: Utilized by
- * {@link ModelProcessor}
- */
 @Mojo(name = GitVersioningMojo.GOAL, defaultPhase = LifecyclePhase.INITIALIZE, threadSafe = true)
 public class GitVersioningMojo extends AbstractMojo {
 

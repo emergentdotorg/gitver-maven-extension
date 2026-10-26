@@ -385,7 +385,7 @@ public class GittleModelProcessor implements ModelProcessor {
     // }
     // addProjectProperties(projectModel);
 
-    final String versionFormat = patchDescription.version;
+    final String versionFormat = patchDescription.getVersion();
     if (versionFormat != null) {
       String oldVersionInput = originalProjectCoords.getVersion();
       if ("${revision}".equals(oldVersionInput)) {
@@ -419,7 +419,7 @@ public class GittleModelProcessor implements ModelProcessor {
       updatePluginVersions(projectModel, versionFormat);
     }
 
-    Map<String, String> propertyFormats = patchDescription.properties;
+    Map<String, String> propertyFormats = patchDescription.getProperties();
     updatePropertyValues(projectModel, propertyFormats, originalProjectCoords);
     addProjectProperties(projectModel);
 
@@ -436,7 +436,7 @@ public class GittleModelProcessor implements ModelProcessor {
     // profile section
     if (!profiles.isEmpty()) {
       for (Profile profile : profiles) {
-        String version = patchDescription.version;
+        String version = patchDescription.getVersion();
         if (version != null) {
           updateDependencyVersions(profile, version);
           updatePluginVersions(profile, version);

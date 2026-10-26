@@ -1,14 +1,16 @@
-<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 https://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
-    <extension>
-        <groupId>org.emergent.gittle.maven</groupId>
-        <artifactId>gittle-maven-extension</artifactId>
-        <version>LATEST</version>
-    </extension>
-
-    <extension>
-        <groupId>io.takari.polyglot</groupId>
-        <artifactId>polyglot-yaml</artifactId>
-        <version>LATEST</version>
-    </extension>
+<extensions
+  xmlns="http://maven.apache.org/EXTENSIONS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0
+                      https://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+  <extension>
+    <groupId>org.emergent.gittle.maven</groupId>
+    <artifactId>gittle-maven-extension</artifactId>
+    <version>LATEST</version>
+  </extension>
+  <extension>
+    <groupId>io.takari.polyglot</groupId>
+    <artifactId>polyglot-yaml</artifactId>
+    <version>LATEST</version>
+  </extension>
 </extensions>
