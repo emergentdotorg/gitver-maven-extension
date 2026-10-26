@@ -2,7 +2,6 @@ package org.emergent.gittle.commons;
 
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.concurrent.Callable;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -25,47 +24,33 @@ public class TagComparator implements Comparator<Ref> {
 
   @Override
   public int compare(Ref ref1, Ref ref2) {
-    RevObject rev1 = tryUnchecked(() -> revWalk.parseAny(ref1.getObjectId()));
-    RevObject rev2 = tryUnchecked(() -> revWalk.parseAny(ref2.getObjectId()));
-
-    // both tags are annotated tags
-    if (rev1 instanceof RevTag && rev2 instanceof RevTag) {
-      return compareTaggerDate((RevTag) rev1, (RevTag) rev2);
+    RevObject rev1 = Throwing.tryUnchecked(() -> revWalk.parseAny(ref1.getObjectId()));
+    RevObject rev2 = Throwing.tryUnchecked(() -> revWalk.parseAny(ref2.getObjectId()));
+    if (rev1 instanceof RevTag revTag1 && rev2 instanceof RevTag revTag2) {
+      return compareTaggerDate(revTag1, revTag2);
     }
-
-    // only ref1 is annotated tag
     if (rev1 instanceof RevTag) {
       return -1;
     }
-
-    // only ref2 is annotated tag
     if (rev2 instanceof RevTag) {
       return 1;
     }
-
-    // both tags are lightweight tags
     return compareTagVersion(ref1, ref2);
   }
 
-  private static <R> R tryUnchecked(Callable<R> block) {
-    try {
-      return block.call();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
+  /** For lightweight tags */
   private static int compareTagVersion(Ref ref1, Ref ref2) {
-    DefaultArtifactVersion version1 = new DefaultArtifactVersion(ref1.getName());
-    DefaultArtifactVersion version2 = new DefaultArtifactVersion(ref2.getName());
-    // sort the highest version first
-    return -version1.compareTo(version2);
+    DefaultArtifactVersion v1 = new DefaultArtifactVersion(ref1.getName());
+    DefaultArtifactVersion v2 = new DefaultArtifactVersion(ref2.getName());
+    // highest version first
+    return -v1.compareTo(v2);
   }
 
+  /** For annotated tags */
   private static int compareTaggerDate(RevTag rev1, RevTag rev2) {
-    Instant revTag1Date = rev1.getTaggerIdent().getWhenAsInstant();
-    Instant revTag2Date = rev2.getTaggerIdent().getWhenAsInstant();
-    // sort the most recent tags first
-    return -revTag1Date.compareTo(revTag2Date);
+    Instant t1 = rev1.getTaggerIdent().getWhenAsInstant();
+    Instant t2 = rev2.getTaggerIdent().getWhenAsInstant();
+    // most recent first
+    return -t1.compareTo(t2);
   }
 }

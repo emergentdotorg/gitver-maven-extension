@@ -36,8 +36,8 @@ final class BuildProperties {
     return property("project.version");
   }
 
-  public static GAV projectGAV() {
-    return GAV.builder()
+  public static Coords projectGAV() {
+    return Coords.builder()
         .setGroupId(projectGroupId())
         .setArtifactId(projectArtifactId())
         .setVersion(projectVersion())

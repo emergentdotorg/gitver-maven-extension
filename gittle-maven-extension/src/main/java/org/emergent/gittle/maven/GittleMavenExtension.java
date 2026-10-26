@@ -26,9 +26,14 @@ public class GittleMavenExtension extends AbstractMavenLifecycleParticipant {
   }
 
   @Override
+  public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
+    sessionHolder.clearGittleSession();
+  }
+
+  @Override
   public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
     GittleSession gsession = sessionHolder.getGittleSession().orElseThrow();
-    Map<Path, GAV> projectGavs = gsession.getProjectGavs();
+    Map<Path, Coords> projectGavs = gsession.getProjectGavs();
     Map<Path, Properties> projectProperties = gsession.getProjectProperties();
 
     session
@@ -41,18 +46,8 @@ public class GittleMavenExtension extends AbstractMavenLifecycleParticipant {
                     .map(Path::toAbsolutePath)
                     .ifPresent(
                         path -> {
-                          projectGavs.put(
-                              path,
-                              new GAV(
-                                  project.getGroupId(),
-                                  project.getArtifactId(),
-                                  project.getVersion()));
+                          projectGavs.put(path, Coords.of(project));
                           projectProperties.put(path, project.getProperties());
                         }));
-  }
-
-  @Override
-  public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
-    sessionHolder.clear();
   }
 }

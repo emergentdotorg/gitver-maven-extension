@@ -43,11 +43,11 @@ public class GitVersioningMojo extends AbstractMojo {
   }
 
   static Plugin asPlugin() {
-    GAV gav = BuildProperties.projectGAV();
+    Coords coords = BuildProperties.projectGAV();
     Plugin plugin = new Plugin();
-    plugin.setGroupId(gav.getGroupId());
-    plugin.setArtifactId(gav.getArtifactId());
-    plugin.setVersion(gav.getVersion());
+    plugin.setGroupId(coords.getGroupId());
+    plugin.setArtifactId(coords.getArtifactId());
+    plugin.setVersion(coords.getVersion());
     return plugin;
   }
 

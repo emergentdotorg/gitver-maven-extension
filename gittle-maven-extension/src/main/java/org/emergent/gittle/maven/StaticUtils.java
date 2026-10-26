@@ -277,12 +277,12 @@ class StaticUtils {
                     ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT)
                     : "0000-01-01T00:00:00Z"));
 
-    final String refName = gitVersionDetails.getRefName();
+    final String refName = gitVersionDetails.refName();
     final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));
     placeholderMap.put("ref", () -> refName);
     placeholderMap.put("ref" + ".slug", refNameSlug);
 
-    final Pattern refPattern = gitVersionDetails.getPatchDescription().pattern();
+    final Pattern refPattern = gitVersionDetails.patchDescription().pattern();
     if (refPattern != null) {
       // ref pattern groups
       for (Entry<String, String> patternGroup :
@@ -313,7 +313,7 @@ class StaticUtils {
     // describe
     final Lazy<GitDescription> description = Lazy.by(gitSituation::getDescription);
     placeholderMap.put("describe", Lazy.by(() -> description.get().toString()));
-    final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
+    final Lazy<String> descriptionTag = Lazy.by(() -> description.get().tag());
     placeholderMap.put("describe.tag", descriptionTag);
 
     final Lazy<Matcher> descriptionTagVersionMatcher =
@@ -368,7 +368,7 @@ class StaticUtils {
         "describe.tag.version.next",
         Lazy.by(() -> nextVersion(descriptionTagVersionMatcher.get())));
 
-    final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
+    final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().distance());
     placeholderMap.put(
         "describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
     placeholderMap.put(
@@ -684,8 +684,8 @@ class StaticUtils {
         + (artifactId != null ? artifactId.getText().trim() : "");
   }
 
-  static String extensionLogHeader(GAV extensionGAV) {
-    String extension = extensionGAV.toString();
+  static String extensionLogHeader(Coords extensionCoords) {
+    String extension = extensionCoords.toString();
     String metaInfo = "[core extension]";
 
     String plainLog = extension + " " + metaInfo;
@@ -706,8 +706,8 @@ class StaticUtils {
         .build();
   }
 
-  static String projectLogHeader(GAV projectGAV) {
-    String project = projectGAV.getProjectId();
+  static String projectLogHeader(Coords projectCoords) {
+    String project = projectCoords.getProjectId();
     return buffer().project(project).build();
   }
 

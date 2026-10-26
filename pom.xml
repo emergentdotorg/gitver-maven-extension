@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <!--
   <parent>
     <groupId>org.emergent.maven.parent</groupId>
-    <artifactId>maven-parent</artifactId>
+    <artifactId>java-parent</artifactId>
     <version>1.0.0</version>
   </parent>
+  -->
 
   <groupId>org.emergent.gittle</groupId>
   <artifactId>gittle-parent</artifactId>
@@ -21,6 +25,7 @@
   </modules>
 
   <properties>
+    <requiredMavenVersion>3.6.4</requiredMavenVersion>
     <groovy.version>4.0.33</groovy.version>
     <java-hamcrest.version>2.0.0.0</java-hamcrest.version>
     <maven-script-interpreter.version>1.7</maven-script-interpreter.version>
@@ -33,11 +38,60 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <revision>Z-LATEST-SNAPSHOT</revision>
     <version.jgitver>0.14.0</version.jgitver>
-    <version.lombok>1.18.38</version.lombok>
+    <version.lombok>1.18.48</version.lombok>
     <version.maven>3.9.9</version.maven>
     <version.maven-plugin-plugin>3.15.1</version.maven-plugin-plugin>
     <version.mrm-maven-plugin>2.0.0</version.mrm-maven-plugin>
     <version.plugintools>3.15.1</version.plugintools>
+    <version.jackson>2.20.0</version.jackson>
+    <version.jackson-annotations>2.20</version.jackson-annotations>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <version.build-helper-maven-plugin>3.6.1</version.build-helper-maven-plugin>
+    <version.central-publishing-maven-plugin>0.10.0</version.central-publishing-maven-plugin>
+    <version.duplicate-finder-maven-plugin>2.0.1</version.duplicate-finder-maven-plugin>
+    <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
+    <version.flatten-maven-plugin>1.7.3</version.flatten-maven-plugin>
+    <version.jacoco-maven-plugin>0.8.15</version.jacoco-maven-plugin>
+    <version.jib-maven-plugin>3.4.5</version.jib-maven-plugin>
+    <version.license-maven-plugin>2.7.0</version.license-maven-plugin>
+    <version.maven-antrun-plugin>3.2.0</version.maven-antrun-plugin>
+    <version.maven-assembly-plugin>3.8.0</version.maven-assembly-plugin>
+    <version.maven-checkstyle-plugin>3.6.0</version.maven-checkstyle-plugin>
+    <version.maven-clean-plugin>3.5.0</version.maven-clean-plugin>
+    <version.maven-compiler-plugin>3.15.0</version.maven-compiler-plugin>
+    <version.maven-dependency-plugin>3.11.0</version.maven-dependency-plugin>
+    <version.maven-deploy-plugin>3.1.4</version.maven-deploy-plugin>
+    <version.maven-ear-plugin>3.4.0</version.maven-ear-plugin>
+    <version.maven-enforcer-plugin>3.6.3</version.maven-enforcer-plugin>
+    <version.maven-failsafe-plugin>3.5.5</version.maven-failsafe-plugin>
+    <version.maven-gpg-plugin>3.2.8</version.maven-gpg-plugin>
+    <version.maven-help-plugin>3.5.1</version.maven-help-plugin>
+    <version.maven-install-plugin>3.1.4</version.maven-install-plugin>
+    <version.maven-invoker-plugin>3.10.1</version.maven-invoker-plugin>
+    <version.maven-jar-plugin>3.5.0</version.maven-jar-plugin>
+    <version.maven-javadoc-plugin>3.12.0</version.maven-javadoc-plugin>
+    <version.maven-jxr-plugin>3.6.0</version.maven-jxr-plugin>
+    <version.maven-plugin-tools>3.15.2</version.maven-plugin-tools>
+    <version.maven-pmd-plugin>3.28.0</version.maven-pmd-plugin>
+    <version.maven-project-info-reports-plugin>3.6.1</version.maven-project-info-reports-plugin>
+    <version.maven-release-plugin>3.3.1</version.maven-release-plugin>
+    <version.maven-resources-plugin>3.5.0</version.maven-resources-plugin>
+    <version.maven-scm-plugin>2.2.1</version.maven-scm-plugin>
+    <version.maven-scm-publish-plugin>3.3.0</version.maven-scm-publish-plugin>
+    <version.maven-shade-plugin>3.6.2</version.maven-shade-plugin>
+    <version.maven-site-plugin>3.22.0</version.maven-site-plugin>
+    <version.maven-source-plugin>3.4.0</version.maven-source-plugin>
+    <version.maven-surefire-plugin>3.5.5</version.maven-surefire-plugin>
+    <version.maven-surefire-report-plugin>3.5.5</version.maven-surefire-report-plugin>
+    <version.maven-toolchains-plugin>3.2.0</version.maven-toolchains-plugin>
+    <version.maven-war-plugin>3.5.1</version.maven-war-plugin>
+    <version.mrm-maven-plugin>1.7.1</version.mrm-maven-plugin>
+    <version.rewrite-maven-plugin>6.43.0</version.rewrite-maven-plugin>
+    <version.sisu-maven-plugin>1.0.1</version.sisu-maven-plugin>
+    <version.taglist-maven-plugin>3.2.2</version.taglist-maven-plugin>
+    <version.versions-maven-plugin>2.23.0</version.versions-maven-plugin>
   </properties>
 
   <url>https://github.com/emergentdotorg/gittle</url>
@@ -112,11 +166,76 @@
             <compilerArgument>-Xlint:unchecked</compilerArgument>
           </configuration>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${version.maven-dependency-plugin}</version>
+          <executions>
+            <execution>
+              <id>analyze</id>
+              <goals>
+                <goal>analyze-only</goal>
+              </goals>
+              <configuration>
+                <failOnWarning>true</failOnWarning>
+                <ignoreNonCompile>true</ignoreNonCompile>
+                <outputXML>true</outputXML>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${version.maven-enforcer-plugin}</version>
+          <executions>
+            <execution>
+              <id>enforce-requireMavenVersion</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>${requiredMavenVersion}</version>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+            <execution>
+              <id>enforce-requireUpperBoundDeps</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireUpperBoundDeps/>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${version.maven-failsafe-plugin}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${version.maven-gpg-plugin}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>${version.maven-invoker-plugin}</version>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
@@ -125,15 +244,57 @@
             <archive>
               <manifest>
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
               </manifest>
             </archive>
           </configuration>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${version.maven-javadoc-plugin}</version>
+          <configuration>
+            <notimestamp>true</notimestamp>
+            <quiet>true</quiet>
+            <locale>en</locale>
+            <archive>
+              <manifest>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
           <version>${version.maven-plugin-plugin}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${version.maven-source-plugin}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
@@ -166,16 +327,19 @@
             </execution>
           </executions>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${version.maven-shade-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.maven-surefire-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
@@ -196,6 +360,7 @@
             </execution>
           </executions>
         </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>license-maven-plugin</artifactId>
@@ -207,15 +372,80 @@
             <keepBackup>false</keepBackup>
           </configuration>
         </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>mrm-maven-plugin</artifactId>
           <version>${version.mrm-maven-plugin}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>${version.versions-maven-plugin}</version>
+          <inherited>false</inherited>
+          <configuration>
+            <generateBackupPoms>false</generateBackupPoms>
+            <ruleSet>
+              <rules>
+                <rule>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <ignoreVersions>
+                    <ignoreVersion>
+                      <type>regex</type>
+                      <version>(.*-(M|SNAPSHOT|alpha|beta|rc)(-)?\d*)</version>
+                    </ignoreVersion>
+                  </ignoreVersions>
+                </rule>
+              </rules>
+            </ruleSet>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${version.jacoco-maven-plugin}</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <phase>prepare-package</phase>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${version.central-publishing-maven-plugin}</version>
+          <extensions>true</extensions>
+        </plugin>
       </plugins>
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
       <!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -272,10 +502,32 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+
+      <dependency>
+        <groupId>com.google.inject</groupId>
+        <artifactId>guice</artifactId>
+        <version>5.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${version.jackson-annotations}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${version.jackson}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${version.jackson}</version>
+      </dependency>
+
       <dependency>
         <groupId>com.fasterxml.jackson.dataformat</groupId>
         <artifactId>jackson-dataformat-xml</artifactId>
-        <version>2.20.0</version>
+        <version>${version.jackson}</version>
       </dependency>
       <dependency>
         <groupId>com.github.petitparser</groupId>
@@ -477,4 +729,66 @@
       -->
     </dependencies>
   </dependencyManagement>
+
+  <profiles>
+    <profile>
+      <id>deploy</id>
+      <activation>
+        <property>
+          <name>env.DEPLOY_SERVER</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <signer>bc</signer>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>deploy-central</id>
+      <activation>
+        <property>
+          <name>env.DEPLOY_SERVER</name>
+          <value>central</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <extensions>true</extensions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

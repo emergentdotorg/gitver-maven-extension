@@ -354,8 +354,8 @@ class ProcessorUtil {
   }
 
   @NullUnmarked
-  static String extensionLogHeader(GAV extensionGAV) {
-    String extension = extensionGAV.toString();
+  static String extensionLogHeader(Coords extensionCoords) {
+    String extension = extensionCoords.toString();
     String metaInfo = "[core extension]";
 
     String plainLog = extension + " " + metaInfo;
@@ -378,8 +378,8 @@ class ProcessorUtil {
   }
 
   @NullUnmarked
-  static String projectLogHeader(GAV projectGAV) {
-    String project = projectGAV.getProjectId();
+  static String projectLogHeader(Coords projectCoords) {
+    String project = projectCoords.getProjectId();
     return buffer().project(project).build();
   }
 

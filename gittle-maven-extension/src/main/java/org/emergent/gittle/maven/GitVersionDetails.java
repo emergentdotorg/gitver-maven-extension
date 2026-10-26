@@ -13,20 +13,4 @@ record GitVersionDetails(
     requireNonNull(refName);
     requireNonNull(patchDescription);
   }
-
-  public String getCommit() {
-    return commit;
-  }
-
-  public GitRefType getRefType() {
-    return refType;
-  }
-
-  public String getRefName() {
-    return refName;
-  }
-
-  public RefPatchDescription getPatchDescription() {
-    return patchDescription;
-  }
 }

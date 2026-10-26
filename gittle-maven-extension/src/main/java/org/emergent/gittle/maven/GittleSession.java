@@ -6,21 +6,20 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Value;
 import org.apache.maven.execution.MavenSession;
 import org.jspecify.annotations.Nullable;
 
 @Value
-@Builder(toBuilder = true, builderClassName = "Builder", setterPrefix = "set")
+@lombok.Builder(toBuilder = true, setterPrefix = "set")
 public class GittleSession {
   Instant start;
   Properties userProperties;
   Properties systemProperties;
   @Nullable File multiModuleProjectDirectory;
 
-  @Default Map<Path, GAV> projectGavs = new TreeMap<>();
+  @Default Map<Path, Coords> projectGavs = new TreeMap<>();
   @Default Map<Path, Properties> projectProperties = new TreeMap<>();
 
   public static GittleSession from(MavenSession session) {

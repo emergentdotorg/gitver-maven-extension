@@ -133,9 +133,6 @@ public class GitSituation {
     return description.get();
   }
 
-  // ----- initialization methods
-  // ------------------------------------------------------------------------------------
-
   private ZonedDateTime timestamp() throws IOException {
     return head != null
         ? GitUtil.revTimestamp(repository, head)

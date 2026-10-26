@@ -108,7 +108,7 @@ public class GittleModelProcessor implements ModelProcessor {
   boolean useRevision = false;
 
   private PropsUtil propsUtil;
-  private Set<GAV> relatedProjects;
+  private Set<Coords> relatedProjects;
 
   // ---- other fields
   // -----------------------------------------------------------------------------------------------
@@ -274,7 +274,7 @@ public class GittleModelProcessor implements ModelProcessor {
 
     if (!patchDescription.userProperties.isEmpty()) {
       log.info("  userProperties: ");
-      String projectVersion = GAV.of(projectModel).getVersion();
+      String projectVersion = Coords.of(projectModel).getVersion();
       patchDescription.userProperties.forEach(
           (key, value) -> {
             log.info("    {} - {}", key, value);
@@ -331,13 +331,13 @@ public class GittleModelProcessor implements ModelProcessor {
       return projectModel;
     }
 
-    GAV projectGAV = GAV.of(projectModel);
-    if (StringUtils.isBlank(projectGAV.getVersion())) {
+    Coords projectCoords = Coords.of(projectModel);
+    if (StringUtils.isBlank(projectCoords.getVersion())) {
       log.debug("skip model - can not determine project version - {}", projectModel.getPomFile());
       return projectModel;
     }
 
-    if (!isRelatedProject(projectGAV)) {
+    if (!isRelatedProject(projectCoords)) {
       if (log.isTraceEnabled()) {
         log.trace("skip model - unrelated project - {}", projectModel.getPomFile());
       }
@@ -357,7 +357,7 @@ public class GittleModelProcessor implements ModelProcessor {
 
     if (log.isInfoEnabled()) {
       // log project header
-      log.info(ProcessorUtil.projectLogHeader(projectGAV));
+      log.info(ProcessorUtil.projectLogHeader(projectCoords));
     }
 
     updateModel(projectModel, gitVersionDetails.patchDescription());
@@ -384,7 +384,7 @@ public class GittleModelProcessor implements ModelProcessor {
   }
 
   private void updateModel(Model projectModel, RefPatchDescription patchDescription) {
-    GAV originalProjectGAV = GAV.of(projectModel);
+    Coords originalProjectCoords = Coords.of(projectModel);
 
     // final Map<String, String> propertyFormats = patchDescription.properties;
     // if (propertyFormats != null) {
@@ -394,7 +394,7 @@ public class GittleModelProcessor implements ModelProcessor {
 
     final String versionFormat = patchDescription.version;
     if (versionFormat != null) {
-      String oldVersionInput = originalProjectGAV.getVersion();
+      String oldVersionInput = originalProjectCoords.getVersion();
       if ("${revision}".equals(oldVersionInput)) {
         Optional<@NonNull GittleSession> gsession = sessionHolder.getGittleSession();
         Properties projectProperties = projectModel.getProperties();
@@ -413,8 +413,8 @@ public class GittleModelProcessor implements ModelProcessor {
 
       log.info(
           "Updating version {} -> {}",
-          originalProjectGAV.toBuilder().setVersion(oldVersionInput),
-          getGitVersion(versionFormat, originalProjectGAV.getVersion()));
+          originalProjectCoords.toBuilder().setVersion(oldVersionInput),
+          getGitVersion(versionFormat, originalProjectCoords.getVersion()));
 
       // if (useRevision) {
       //   log.warn("Using revision: {}", versionFormat);
@@ -427,17 +427,17 @@ public class GittleModelProcessor implements ModelProcessor {
     }
 
     Map<String, String> propertyFormats = patchDescription.properties;
-    updatePropertyValues(projectModel, propertyFormats, originalProjectGAV);
+    updatePropertyValues(projectModel, propertyFormats, originalProjectCoords);
     addProjectProperties(projectModel);
 
     // if (!useRevision) {
-    updateProfiles(projectModel, patchDescription, originalProjectGAV);
+    updateProfiles(projectModel, patchDescription, originalProjectCoords);
     // }
     // profile section
   }
 
   private void updateProfiles(
-      Model model, RefPatchDescription patchDescription, GAV originalProjectGAV) {
+      Model model, RefPatchDescription patchDescription, Coords originalProjectCoords) {
     List<Profile> profiles = model.getProfiles();
 
     // profile section
@@ -450,7 +450,7 @@ public class GittleModelProcessor implements ModelProcessor {
         }
 
         Map<String, String> propertyFormats = patchDescription.properties;
-        updatePropertyValues(profile, propertyFormats, originalProjectGAV);
+        updatePropertyValues(profile, propertyFormats, originalProjectCoords);
       }
     }
   }
@@ -458,10 +458,10 @@ public class GittleModelProcessor implements ModelProcessor {
   private void updateParentVersion(Model projectModel, String versionFormat) {
     Parent parent = projectModel.getParent();
     if (parent != null) {
-      GAV parentGAV = GAV.of(parent);
-      if (isRelatedProject(parentGAV)) {
-        String gitVersion = getGitVersion(versionFormat, parentGAV.getVersion());
-        log.debug("set parent version to {} ({})", gitVersion, parentGAV);
+      Coords parentCoords = Coords.of(parent);
+      if (isRelatedProject(parentCoords)) {
+        String gitVersion = getGitVersion(versionFormat, parentCoords.getVersion());
+        log.debug("set parent version to {} ({})", gitVersion, parentCoords);
         parent.setVersion(gitVersion);
       }
     }
@@ -469,8 +469,8 @@ public class GittleModelProcessor implements ModelProcessor {
 
   private void updateVersion(Model projectModel, String versionFormat) {
     if (projectModel.getVersion() != null) {
-      GAV projectGAV = GAV.of(projectModel);
-      String gitVersion = getGitVersion(versionFormat, projectGAV.getVersion());
+      Coords projectCoords = Coords.of(projectModel);
+      String gitVersion = getGitVersion(versionFormat, projectCoords.getVersion());
       log.info("set version to {}", gitVersion);
       projectModel.setVersion(gitVersion);
       sessionHolder
@@ -481,7 +481,9 @@ public class GittleModelProcessor implements ModelProcessor {
   }
 
   private void updatePropertyValues(
-      ModelBase model, @Nullable Map<String, String> propertyFormats, GAV originalProjectGAV) {
+      ModelBase model,
+      @Nullable Map<String, String> propertyFormats,
+      Coords originalProjectCoords) {
     Properties modelProps = model.getProperties();
     // modelProps.remove("revision");
     if (Objects.isNull(propertyFormats) || propertyFormats.isEmpty()) {
@@ -494,7 +496,9 @@ public class GittleModelProcessor implements ModelProcessor {
           if (propertyFormat != null) {
             String gitPropertyValue =
                 getGitPropertyValue(
-                    propertyFormat, (String) modelPropertyValue, originalProjectGAV.getVersion());
+                    propertyFormat,
+                    (String) modelPropertyValue,
+                    originalProjectCoords.getVersion());
             if (!gitPropertyValue.equals(modelPropertyValue)) {
               log.info("set property {} to {}", modelPropertyName, gitPropertyValue);
               model.addProperty((String) modelPropertyName, gitPropertyValue);
@@ -572,10 +576,10 @@ public class GittleModelProcessor implements ModelProcessor {
 
   private void updateVersion(Plugin plugin, String versionFormat) {
     if (plugin.getVersion() != null) {
-      GAV pluginGAV = GAV.of(plugin);
-      String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
+      Coords pluginCoords = Coords.of(plugin);
+      String gitVersion = getGitVersion(versionFormat, pluginCoords.getVersion());
       if (log.isDebugEnabled()) {
-        log.debug("{}: set version to {}", pluginGAV.getProjectId(), gitVersion);
+        log.debug("{}: set version to {}", pluginCoords.getProjectId(), gitVersion);
       }
       plugin.setVersion(gitVersion);
     }
@@ -583,21 +587,21 @@ public class GittleModelProcessor implements ModelProcessor {
 
   private void updateVersion(ReportPlugin plugin, String versionFormat) {
     if (plugin.getVersion() != null) {
-      GAV pluginGAV = GAV.of(plugin);
-      String gitVersion = getGitVersion(versionFormat, pluginGAV.getVersion());
+      Coords pluginCoords = Coords.of(plugin);
+      String gitVersion = getGitVersion(versionFormat, pluginCoords.getVersion());
       if (log.isDebugEnabled()) {
-        log.debug("{}: set version to {}", pluginGAV.getProjectId(), gitVersion);
+        log.debug("{}: set version to {}", pluginCoords.getProjectId(), gitVersion);
       }
       plugin.setVersion(gitVersion);
     }
   }
 
   private List<Plugin> filterRelatedPlugins(List<Plugin> plugins) {
-    return plugins.stream().filter(it -> isRelatedProject(GAV.of(it))).collect(toList());
+    return plugins.stream().filter(it -> isRelatedProject(Coords.of(it))).collect(toList());
   }
 
   private List<ReportPlugin> filterRelatedReportPlugins(List<ReportPlugin> plugins) {
-    return plugins.stream().filter(it -> isRelatedProject(GAV.of(it))).collect(toList());
+    return plugins.stream().filter(it -> isRelatedProject(Coords.of(it))).collect(toList());
   }
 
   private void updateDependencyVersions(ModelBase model, String versionFormat) {
@@ -631,17 +635,17 @@ public class GittleModelProcessor implements ModelProcessor {
 
   private void updateVersion(Dependency dependency, String versionFormat) {
     if (dependency.getVersion() != null) {
-      GAV dependencyGAV = GAV.of(dependency);
-      String gitVersion = getGitVersion(versionFormat, dependencyGAV.getVersion());
+      Coords dependencyCoords = Coords.of(dependency);
+      String gitVersion = getGitVersion(versionFormat, dependencyCoords.getVersion());
       if (log.isDebugEnabled()) {
-        log.debug("{}: set version to {}", dependencyGAV.getProjectId(), gitVersion);
+        log.debug("{}: set version to {}", dependencyCoords.getProjectId(), gitVersion);
       }
       dependency.setVersion(gitVersion);
     }
   }
 
   public List<Dependency> filterRelatedDependencies(List<Dependency> dependencies) {
-    return dependencies.stream().filter(it -> isRelatedProject(GAV.of(it))).collect(toList());
+    return dependencies.stream().filter(it -> isRelatedProject(Coords.of(it))).collect(toList());
   }
 
   private void addProjectProperties(Model projectModel) {
@@ -973,33 +977,33 @@ public class GittleModelProcessor implements ModelProcessor {
   // ---- determine related projects
   // ---------------------------------------------------------------------------------
 
-  private Set<GAV> determineRelatedProjects(Model projectModel) throws IOException {
-    final HashSet<GAV> relatedProjects = new HashSet<>();
+  private Set<Coords> determineRelatedProjects(Model projectModel) throws IOException {
+    final HashSet<Coords> relatedProjects = new HashSet<>();
     determineRelatedProjects(projectModel, relatedProjects);
     config.relatedProjects.stream()
-        .map(it -> GAV.of(it.groupId, it.artifactId, "*"))
+        .map(it -> Coords.of(it.groupId, it.artifactId, "*"))
         .forEach(relatedProjects::add);
     return relatedProjects;
   }
 
-  private void determineRelatedProjects(Model projectModel, Set<GAV> relatedProjects)
+  private void determineRelatedProjects(Model projectModel, Set<Coords> relatedProjects)
       throws IOException {
-    final GAV projectGAV = GAV.of(projectModel);
-    if (relatedProjects.contains(projectGAV)) {
+    final Coords projectCoords = Coords.of(projectModel);
+    if (relatedProjects.contains(projectCoords)) {
       return;
     }
 
     // add self
-    relatedProjects.add(projectGAV);
+    relatedProjects.add(projectCoords);
 
     // check for related parent project by parent tag
     if (projectModel.getParent() != null) {
-      final GAV parentGAV = GAV.of(projectModel.getParent());
+      final Coords parentCoords = Coords.of(projectModel.getParent());
       final File parentProjectPomFile = ProcessorUtil.getParentProjectPomFile(projectModel);
       if (isRelatedPom(parentProjectPomFile)) {
         final Model parentProjectModel = readModel(parentProjectPomFile);
-        final GAV parentProjectGAV = GAV.of(parentProjectModel);
-        if (parentProjectGAV.equals(parentGAV)) {
+        final Coords parentProjectCoords = Coords.of(parentProjectModel);
+        if (parentProjectCoords.equals(parentCoords)) {
           determineRelatedProjects(parentProjectModel, relatedProjects);
         }
       }
@@ -1018,8 +1022,8 @@ public class GittleModelProcessor implements ModelProcessor {
     }
   }
 
-  private boolean isRelatedProject(GAV project) {
-    return Stream.of(project, GAV.of(project.getGroupId(), project.getArtifactId(), "*"))
+  private boolean isRelatedProject(Coords project) {
+    return Stream.of(project, Coords.of(project.getGroupId(), project.getArtifactId(), "*"))
         .anyMatch(relatedProjects::contains);
   }
 

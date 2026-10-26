@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
 
 @Value
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-// @Builder(toBuilder = true, builderClassName = "Builder", setterPrefix = "set")
+// @lombok.Builder(toBuilder = true, setterPrefix = "set")
 class PropsUtil {
 
   static final Pattern VERSION_PATTERN =
