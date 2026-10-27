@@ -1,31 +1,37 @@
 package org.emergent.gittle.maven;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
+import static java.lang.Boolean.TRUE;
+import static java.util.Objects.requireNonNull;
 import static org.emergent.gittle.maven.GitRefType.COMMIT;
 import static org.emergent.gittle.maven.MavenUtil.memoize;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import com.google.common.io.ByteStreams;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -34,11 +40,22 @@ import org.jspecify.annotations.NullUnmarked;
 @Getter
 @NullUnmarked
 @ToString
-@EqualsAndHashCode
-@JsonInclude(NON_NULL)
+@EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
+@JsonInclude(NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JacksonXmlRootElement(localName = "configuration")
-public class Configuration {
+// @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor_={@JsonCreator})
+public class Configuration extends PatchDescription {
+
+  private static final PatchDescription DEFAULT_DESC =
+      new PatchDescription(
+          "${commit}",
+          "v(?<ver>.*)",
+          true,
+          false,
+          true,
+          new LinkedHashMap<>(),
+          new LinkedHashMap<>());
 
   private static final Supplier<Configuration> DEFAULT_SUPPLIER =
       memoize(
@@ -46,114 +63,83 @@ public class Configuration {
               () -> {
                 String name = "schema/gittle-defaults.xml";
                 ClassLoader loader = ProcessorUtil.class.getClassLoader();
-                return ProcessorUtil.readConfig(Objects.requireNonNull(loader.getResource(name)));
+                return ProcessorUtil.readConfig(requireNonNull(loader.getResource(name)));
               }));
 
   public static Configuration getDefault() {
     return DEFAULT_SUPPLIER.get();
   }
 
+  public static Configuration read(URL resource) throws IOException {
+    try (InputStream is = resource.openStream()) {
+      return read(new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8));
+    }
+  }
+
   public static Configuration read(String content) throws IOException {
-    Configuration config =
-        XmlMapper.builder()
-            .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
-            .build()
-            .readValue(content, Configuration.class);
-
-    List<PatchDescription> patchDescriptions = new ArrayList<>(config.refs.list);
-    if (config.rev != null) {
-      patchDescriptions.add(config.rev);
-    }
-    for (PatchDescription patchDescription : patchDescriptions) {
-      if (patchDescription.describeTagPattern == null) {
-        patchDescription.describeTagPattern = config.describeTagPattern;
-      }
-      if (patchDescription.describeTagFirstParent == null) {
-        patchDescription.describeTagFirstParent = config.describeTagFirstParent;
-      }
-      if (patchDescription.updatePom == null) {
-        patchDescription.updatePom = config.updatePom;
-      }
-      if (patchDescription.useRevision == null) {
-        patchDescription.useRevision = config.useRevision;
-      }
-    }
-
+    SimpleModule module = new SimpleModule("gittle", new Version(1, 0, 0, "", null, null));
+    module.addDeserializer(String.class, new TrimWhitespaceDeserializer());
+    Configuration config = read(content, Configuration.class);
+    Stream.concat(Stream.of(config.rev), config.refs.stream())
+        .filter(Objects::nonNull)
+        .forEach(pd -> pd.merge(config));
     return config;
   }
 
-  public Boolean disable = false;
+  public static <T> T read(String content, Class<? extends T> clazz) throws IOException {
+    Version moduleVersion = new Version(1, 0, 0, "", null, null);
+    SimpleModule module = new SimpleModule("gittle", moduleVersion);
+    module.addDeserializer(String.class, new TrimWhitespaceDeserializer());
+    XmlMapper mapper =
+        XmlMapper.builder().enable(ACCEPT_CASE_INSENSITIVE_ENUMS).addModule(module).build();
+    return mapper.readValue(content, clazz);
+  }
 
-  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
-  public String projectVersionPattern = null;
+  private Boolean disable;
+  @Getter private String projectVersionPattern;
+  private Boolean considerTagsOnBranches;
 
-  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
-  public String describeTagPattern = null;
+  public boolean getDisable() {
+    return TRUE.equals(disable);
+  }
 
-  public Boolean describeTagFirstParent = true;
+  public boolean getConsiderTagsOnBranches() {
+    return TRUE.equals(considerTagsOnBranches);
+  }
 
-  public Boolean updatePom = false;
+  //
+  // @JacksonXmlElementWrapper(useWrapping = false)
+  // PatchDescription defaults = new PatchDescription(
+  //    "${commit}", "v(?<ver>.*)",
+  //        true, false, true,
+  //    new LinkedHashMap<>(), new LinkedHashMap<>());
 
-  public Boolean useRevision;
+  @JacksonXmlElementWrapper(localName = "refs")
+  @JacksonXmlProperty(localName = "ref")
+  protected List<RefPatchDescription> refs = new ArrayList<>();
 
-  public RefPatchDescriptionList refs = new RefPatchDescriptionList();
+  protected PatchDescription rev;
 
-  public PatchDescription rev;
+  @JacksonXmlElementWrapper(localName = "relatedProjects")
+  @JacksonXmlProperty(localName = "projects")
+  private List<RelatedProject> relatedProjects = new ArrayList<>();
 
-  @JsonInclude(NON_EMPTY)
-  @JacksonXmlElementWrapper
-  @JsonProperty(required = true)
-  public List<RelatedProject> relatedProjects = new ArrayList<>();
-
-  @Getter
-  @ToString
-  @EqualsAndHashCode
-  @JsonInclude(NON_NULL)
-  public static class PatchDescription {
-
-    public PatchDescription() {}
-
-    public PatchDescription(PatchDescription that) {
-      this.describeTagPattern = that.describeTagPattern;
-      this.version = that.version;
-      this.properties = new HashMap<>(that.properties);
-      this.userProperties = new HashMap<>(that.userProperties);
-      this.updatePom = that.updatePom;
-      this.useRevision = that.useRevision;
-      this.describeTagFirstParent = that.describeTagFirstParent;
-    }
-
-    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
-    public String describeTagPattern;
-
-    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
-    public String version;
-
-    @JsonInclude(NON_EMPTY)
-    @JacksonXmlElementWrapper(useWrapping = false)
-    public Map<String, String> properties = new HashMap<>();
-
-    @JsonInclude(NON_EMPTY)
-    @JacksonXmlElementWrapper(useWrapping = false)
-    public Map<String, String> userProperties = new HashMap<>();
-
-    public Boolean updatePom = false;
-
-    public Boolean useRevision;
-
-    public Boolean describeTagFirstParent;
+  public Configuration() {
+    // this.refs = requireNonNullElseGet(refs, ArrayList::new);
+    // this.relatedProjects = requireNonNullElseGet(relatedProjects, ArrayList::new);
+    this.merge(DEFAULT_DESC);
+    // Stream.concat(Stream.of(rev), refs.stream())
+    //    .filter(Objects::nonNull)
+    //    .forEach(pd -> pd.merge(this));
   }
 
   @Getter
-  @JsonInclude(NON_NULL)
   @ToString(callSuper = true)
   @EqualsAndHashCode(callSuper = true)
+  @JsonInclude(NON_EMPTY)
   public static class RefPatchDescription extends PatchDescription {
 
-    @JacksonXmlProperty(isAttribute = true)
     public GitRefType type = COMMIT;
-
-    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
     public String pattern;
 
     public RefPatchDescription() {}
@@ -168,41 +154,20 @@ public class Configuration {
   @Getter
   @ToString
   @EqualsAndHashCode
-  public static class RefPatchDescriptionList {
-
-    @JacksonXmlProperty(isAttribute = true)
-    public Boolean considerTagsOnBranches = false;
-
-    @JsonInclude(NON_EMPTY)
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JacksonXmlProperty(localName = "ref")
-    public List<RefPatchDescription> list = new ArrayList<>();
-  }
-
-  @Getter
-  @ToString
-  @EqualsAndHashCode
+  @AllArgsConstructor
+  @JsonInclude(NON_EMPTY)
   public static class RelatedProject {
-
-    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+    @JsonProperty(required = true)
     public String groupId;
 
-    @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
+    @JsonProperty(required = true)
     public String artifactId;
-
-    @JsonCreator
-    public RelatedProject(
-        @JsonProperty(required = true, value = "groupId") String groupId,
-        @JsonProperty(required = true, value = "artifactId") String artifactId) {
-      this.groupId = groupId;
-      this.artifactId = artifactId;
-    }
   }
 
-  public static class IgnoreWhitespaceDeserializer extends JsonDeserializer<Object> {
+  public static class TrimWhitespaceDeserializer extends JsonDeserializer<String> {
     @Override
-    public Object deserialize(JsonParser jp, DeserializationContext context) throws IOException {
-      return jp.getText().replaceAll("\\s+", "");
+    public String deserialize(JsonParser jp, DeserializationContext context) throws IOException {
+      return jp.getText().trim();
     }
   }
 }

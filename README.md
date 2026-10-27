@@ -212,7 +212,8 @@ You can configure the version and properties adjustments for specific branches a
                       https://emergentdotorg.github.io/gittle/configuration/gittle-configuration-v1_0_0.xsd ">
 
     <refs>
-        <ref type="branch">
+        <ref>
+          <type>branch</type>
             <pattern>.+</pattern>
             <version>${ref}-SNAPSHOT</version>
             <properties>
@@ -220,7 +221,8 @@ You can configure the version and properties adjustments for specific branches a
             </properties>
         </ref>
 
-        <ref type="tag">
+        <ref>
+          <type>tag</type>
             <pattern><![CDATA[v(?<version>.*)]]></pattern>
             <version>${ref.version}</version>
         </ref>
@@ -240,12 +242,12 @@ You can configure the version and properties adjustments for specific branches a
     - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<projectVersionPattern>` An arbitrary regex to match project version, matching groups can be used as [Format Placeholders](#format-placeholders) (has to be a **full match pattern**)
-- `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
+- `<tagPattern>` An arbitrary regex to match tag names for git describe command
     - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
-- `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+- `<followFirstParentOnly>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
     - default is `true`
 
-- `<updatePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
+- `<updateSourcePom>` Enable(`true`)/disable(`false`) version and properties update in original pom file, default is `false`
     - Can be overridden by command option, see [Parameters & Environment Variables](#parameters--environment-variables).
 
 - `<refs considerTagsOnBranches="BOOLEAN">` List of ref configurations, ordered by priority. First matching
@@ -260,10 +262,10 @@ You can configure the version and properties adjustments for specific branches a
             - has to be a **full match pattern** e.g. `main` or `feature/.+`
               <br><br>
 
-        - `<describeTagPattern>` An arbitrary regex to match tag names for git describe command
+        - `<tagPattern>` An arbitrary regex to match tag names for git describe command
             - has to be a **full match pattern** e.g. `v.+`)
-            - will override global `<describeTagPattern>` value
-        - `<describeTagFirstParent>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+            - will override global `<tagPattern>` value
+        - `<followFirstParentOnly>` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
             - default is `true`
               <br><br>
 
@@ -284,8 +286,8 @@ You can configure the version and properties adjustments for specific branches a
           </userProperties>
           ```
 
-        - `<updatePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
-            - will override global `<updatePom>` value
+        - `<updateSourcePom>` Enable(`true`) or disable(`false`) version and properties update in original pom file
+            - will override global `<updateSourcePom>` value
 
 
 - `<rev>` Rev configuration will be used if no ref configuration is matching current git situation.
@@ -347,7 +349,8 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
           <projectVersionPattern><![CDATA[^.+-(?<environment>.+)-SNAPSHOT$]]></projectVersionPattern>
 
           <refs>
-            <ref type="branch">
+            <ref>
+              <type>branch</type>
               <version>${version.environment}-SNAPSHOT</version>
             </ref>
           </refs>
@@ -362,7 +365,8 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
     - Named Group Example
         ```xml
-        <ref type="branch">
+        <ref>
+          <type>branch</type>
             <pattern><![CDATA[feature/(?<feature>.+)]]></pattern>
             <version>${ref.feature}-SNAPSHOT</version>
         </ref>
@@ -424,14 +428,15 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       Only *trailing* digits of the label are considered — `RC1-final` bumps to `RC1-final1`, not `RC2-final`.
       e.g. '1.2.3' → '1.2.4', '1.2.3.4' → '1.2.3.5', '1.2.3-RC1' → '1.2.3-RC2', '1.2.3-alpha' → '1.2.3-alpha1'
 - Describe Tag Pattern Groups
-    - Content of regex groups in `<describeTagPattern>` can be addressed like this:
+    - Content of regex groups in `<tagPattern>` can be addressed like this:
     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
     - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
     - Named Group Example
         ```xml
-        <ref type="branch">
+        <ref>
+          <type>branch</type>
             <pattern>main</pattern>
-            <describeTagPattern><![CDATA[v(?<name>.*)]]></describeTagPattern>
+            <tagPattern><![CDATA[v(?<name>.*)]]></tagPattern>
             <version>${describe.tag.name}-SNAPSHOT</version>
         </ref>
         ```
@@ -475,7 +480,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - **Environment Variables**
     - `export VERSIONING_UPDATE_POM=true`
     - **Command Line Parameters**
-    - `mvn … -Dversioning.updatePom`
+    - `mvn … -Dversioning.updateSourcePom`
 
 ## Provided Project Properties
 
@@ -540,7 +545,8 @@ export VERSIONING_GIT_TAG=$PROVIDED_TAG;
 The [maven reproducible builds feature](https://maven.apache.org/guides/mini/guide-reproducible-builds.html) can be easily supported with this extension e.g.
 
 ```xml
-<ref type="branch">
+<ref>
+  <type>branch</type>
   <pattern>.+</pattern>
   <properties>
     <project.build.outputTimestamp>${commit.timestamp}</project.build.outputTimestamp>

@@ -37,7 +37,7 @@ public class GitSituation {
 
   private final Supplier<Boolean> clean = Lazy.by(this::clean);
 
-  @Getter private Pattern describeTagPattern = Pattern.compile(".*");
+  @Getter private Pattern tagPattern = Pattern.compile(".*");
 
   @Getter @Setter private boolean firstParent = true;
 
@@ -124,8 +124,8 @@ public class GitSituation {
     return clean.get();
   }
 
-  public void setDescribeTagPattern(Pattern describeTagPattern) {
-    this.describeTagPattern = requireNonNull(describeTagPattern);
+  public void setTagPattern(Pattern tagPattern) {
+    this.tagPattern = requireNonNull(tagPattern);
     this.description = Lazy.by(this::describe);
   }
 
@@ -152,6 +152,6 @@ public class GitSituation {
   }
 
   private GitDescription describe() throws IOException {
-    return GitUtil.describe(head, describeTagPattern, repository, firstParent);
+    return GitUtil.describe(head, tagPattern, repository, firstParent);
   }
 }

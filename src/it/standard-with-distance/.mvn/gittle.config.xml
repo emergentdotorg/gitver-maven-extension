@@ -4,19 +4,23 @@
   xsi:schemaLocation="http://emergentdotorg.github.io/gittle/configuration/1.0.0
                       https://emergentdotorg.github.io/gittle-configuration-v1.0.0.xsd">
 
-<refs considerTagsOnBranches="false">
+  <considerTagsOnBranches>false</considerTagsOnBranches>
+  <refs>
 
-    <ref type="tag">
+    <ref>
+      <type>tag</type>
       <pattern><![CDATA[v(?<version>.*)]]></pattern>
       <version>${ref.version}</version>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>(main|master)</pattern>
       <version>${describe.tag.version.next}</version>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>.+</pattern>
       <version>${ref.slug}-${describe.distance}-${commit.short}-SNAPSHOT</version>
     </ref>

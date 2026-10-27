@@ -78,7 +78,7 @@ class PropsUtil {
   private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
     return addLocalPlaceHolders(
         new HashMap<>(globalFormatPlaceholderMap),
-        Optional.ofNullable(config.projectVersionPattern).map(Pattern::compile).orElse(null),
+        Optional.ofNullable(config.getProjectVersionPattern()).map(Pattern::compile).orElse(null),
         projectVersion);
   }
 
@@ -415,10 +415,9 @@ class PropsUtil {
                     descriptionDistance.get())));
 
     // describe tag pattern groups
-    final Lazy<Map<String, @Nullable String>> describeTagPatternValues =
-        Lazy.by(
-            () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
-    for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+    final Lazy<Map<String, @Nullable String>> tagPatternValues =
+        Lazy.by(() -> patternGroupValues(gitSituation.getTagPattern(), descriptionTag.get()));
+    for (String groupName : patternGroups(gitSituation.getTagPattern())) {
       final var placeholderKey = "describe.tag." + groupName;
       // ensure no placeholder overwrites
       if (placeholderMap.containsKey(placeholderKey)) {
@@ -430,7 +429,7 @@ class PropsUtil {
                 + "}");
       }
       Lazy<String> groupValue =
-          Lazy.by(() -> nonNullOrEmpty(describeTagPatternValues.get().get(groupName)));
+          Lazy.by(() -> nonNullOrEmpty(tagPatternValues.get().get(groupName)));
       placeholderMap.put(placeholderKey, groupValue);
       placeholderMap.put(
           placeholderKey + ".slug", Lazy.by(() -> ProcessorUtil.slugify(groupValue.get())));

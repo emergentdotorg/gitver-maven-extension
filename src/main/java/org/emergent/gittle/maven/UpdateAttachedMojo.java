@@ -14,17 +14,17 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-@Mojo(name = GitVersioningMojo.GOAL, defaultPhase = LifecyclePhase.INITIALIZE, threadSafe = true)
-public class GitVersioningMojo extends AbstractMojo {
+@Mojo(name = UpdateAttachedMojo.GOAL, defaultPhase = LifecyclePhase.INITIALIZE, threadSafe = true)
+public class UpdateAttachedMojo extends AbstractMojo {
 
-  static final String GOAL = "git-versioning";
+  static final String GOAL = "update-attached";
 
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject project;
 
   @Override
   public synchronized void execute() {
-    getLog().debug("mojo run");
+    getLog().debug("updating attached pom");
     File gitVersionedPomFile = new File(project.getBasedir(), Constants.GIT_VERSIONING_POM_NAME);
     if (gitVersionedPomFile.isFile()) {
       project.setPomFile(gitVersionedPomFile);

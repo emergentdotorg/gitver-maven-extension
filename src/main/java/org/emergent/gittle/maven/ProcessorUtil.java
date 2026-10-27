@@ -47,13 +47,13 @@ class ProcessorUtil {
   @NullUnmarked
   static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, Configuration config) {
     final Lazy<List<String>> sortedTags = Lazy.by(gitSituation::getTags);
-    for (RefPatchDescription refConfig : config.refs.list) {
-      if (refConfig.useRevision == null && config.useRevision != null)
-        refConfig.useRevision = config.useRevision;
+    for (RefPatchDescription refConfig : config.getRefs()) {
+      if (refConfig.updateAttachedPom == null)
+        refConfig.updateAttachedPom = config.getUpdateAttachedPom();
       switch (refConfig.type) {
         case TAG:
           {
-            if (gitSituation.isDetached() || config.refs.considerTagsOnBranches) {
+            if (gitSituation.isDetached() || config.getConsiderTagsOnBranches()) {
               for (String tag : sortedTags.get()) {
                 Pattern pattern =
                     Optional.ofNullable(refConfig.pattern).map(Pattern::compile).orElse(null);
@@ -81,14 +81,14 @@ class ProcessorUtil {
       }
     }
 
-    if (config.rev != null) {
-      if (config.rev.useRevision == null && config.useRevision != null)
-        config.rev.useRevision = config.useRevision;
+    if (config.getRev() != null) {
+      if (config.getRev().updateAttachedPom == null)
+        config.getRev().updateAttachedPom = config.getUpdateAttachedPom();
       return new GitVersionDetails(
           gitSituation.getRev(),
           COMMIT,
           gitSituation.getRev(),
-          new RefPatchDescription(COMMIT, null, config.rev));
+          new RefPatchDescription(COMMIT, null, config.getRev()));
     }
 
     return null;

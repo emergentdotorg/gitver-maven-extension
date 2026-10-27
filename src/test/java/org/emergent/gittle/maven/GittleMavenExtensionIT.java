@@ -19,7 +19,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.shared.verifier.Verifier;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -227,7 +226,7 @@ class GittleMavenExtensionIT {
           projectDir,
           new Configuration() {
             {
-              refs.list.add(createBranchVersionDescription());
+              refs.add(createBranchVersionDescription());
             }
           });
 
@@ -299,8 +298,8 @@ class GittleMavenExtensionIT {
         .enable(SerializationFeature.INDENT_OUTPUT)
         .writeValue(configFile.toFile(), config);
     System.err.printf(
-        "Config file (useRevision=%s): %s%n%s%n%n",
-        config.useRevision,
+        "Config file (updateAttachedPom=%s): %s%n%s%n%n",
+        config.getUpdateAttachedPom(),
         configFile.toAbsolutePath(),
         Files.readString(configFile, StandardCharsets.UTF_8));
     return configFile;

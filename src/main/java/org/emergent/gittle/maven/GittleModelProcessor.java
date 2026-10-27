@@ -1,5 +1,7 @@
 package org.emergent.gittle.maven;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.parseBoolean;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
@@ -59,7 +61,6 @@ import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
@@ -68,17 +69,15 @@ import org.jspecify.annotations.Nullable;
 @Slf4j
 @NullUnmarked
 @Singleton
-// @Priority(1)
 @Named("core-default")
-// @Typed(ModelProcessor.class)
 public class GittleModelProcessor implements ModelProcessor {
 
   private static final String OPTION_NAME_GIT_REF = "git.ref";
   private static final String OPTION_NAME_GIT_TAG = "git.tag";
   private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
   private static final String OPTION_NAME_DISABLE = "versioning.disable";
-  private static final String OPTION_UPDATE_POM = "versioning.updatePom";
-  private static final String OPTION_USE_REVISION = "versioning.useRevision";
+  private static final String OPTION_UPDATE_SOURCE_POM = "versioning.updateSourcePom";
+  private static final String OPTION_UPDATE_ATTACHED_POM = "versioning.updateAttachedPom";
   private static final String OPTION_CONFIG_FILE_NAME = "versioning.configFile";
 
   @Inject private GittleSessionHolder sessionHolder;
@@ -94,8 +93,8 @@ public class GittleModelProcessor implements ModelProcessor {
 
   private boolean disabled = false;
   private GitVersionDetails gitVersionDetails;
-  boolean updatePom = false;
-  boolean useRevision = false;
+  boolean updateSourcePom = false;
+  boolean updateAttachedPom = false;
 
   private PropsUtil propsUtil;
   private Set<Coords> relatedProjects;
@@ -197,7 +196,7 @@ public class GittleModelProcessor implements ModelProcessor {
       }
     } else {
       // check if extension is disabled by config option
-      disabled = config.disable != null && config.disable;
+      disabled = config.getDisable();
       if (disabled) {
         log.info("skip - versioning is disabled by config option");
         return;
@@ -230,8 +229,10 @@ public class GittleModelProcessor implements ModelProcessor {
       log.warn("  branch: {}", gitSituation.getBranch());
       log.warn("  tags: {}", gitSituation.getTags());
       log.warn("defined ref configurations:");
-      config.refs.list.forEach(
-          ref -> log.warn("  {} - pattern: {}", rightPad(ref.type.name(), 6), ref.pattern));
+      config
+          .getRefs()
+          .forEach(
+              ref -> log.warn("  {} - pattern: {}", rightPad(ref.type.name(), 6), ref.pattern));
       disabled = true;
       return;
     }
@@ -243,18 +244,15 @@ public class GittleModelProcessor implements ModelProcessor {
         "ref configuration: {} - pattern: {}",
         gitVersionDetails.refType().name(),
         patchDescription.pattern);
-    if (patchDescription.describeTagPattern != null
-        && !patchDescription.describeTagPattern.equals(".*")) {
-      log.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
+    if (patchDescription.tagPattern != null && !patchDescription.tagPattern.equals(".*")) {
+      log.info("  tagPattern: {}", patchDescription.tagPattern);
       Pattern pattern =
-          Optional.ofNullable(patchDescription.describeTagPattern)
-              .map(Pattern::compile)
-              .orElse(null);
-      gitSituation.setDescribeTagPattern(pattern);
+          Optional.ofNullable(patchDescription.tagPattern).map(Pattern::compile).orElse(null);
+      gitSituation.setTagPattern(pattern);
     }
-    if (patchDescription.describeTagFirstParent != null) {
-      log.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);
-      gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
+    if (patchDescription.followFirstParentOnly != null) {
+      log.info("  followFirstParentOnly: {}", patchDescription.followFirstParentOnly);
+      gitSituation.setFirstParent(patchDescription.followFirstParentOnly);
     }
     if (patchDescription.version != null) {
       log.info("  version: {}", patchDescription.version);
@@ -278,14 +276,14 @@ public class GittleModelProcessor implements ModelProcessor {
           });
     }
 
-    updatePom = getUpdatePomOption(patchDescription);
-    if (updatePom) {
-      log.info("  updatePom: {}", updatePom);
+    updateSourcePom = getUpdateSourcePomOption(patchDescription);
+    if (updateSourcePom) {
+      log.info("  updateSourcePom: {}", updateSourcePom);
     }
 
-    useRevision = getUseRevisionOption(patchDescription);
-    if (useRevision) {
-      log.info("  useRevision: {}", useRevision);
+    updateAttachedPom = getUpdateAttachedPom(patchDescription);
+    if (updateAttachedPom) {
+      log.info("  updateAttachedPom: {}", updateAttachedPom);
     }
 
     // determine related projects
@@ -357,7 +355,7 @@ public class GittleModelProcessor implements ModelProcessor {
     updateModel(projectModel, gitVersionDetails.patchDescription());
 
     File gitVersionedPomFile = writePomFile(projectModel);
-    if (updatePom) {
+    if (updateSourcePom) {
       log.debug("updating original POM file");
       Files.copy(
           gitVersionedPomFile.toPath(),
@@ -371,7 +369,9 @@ public class GittleModelProcessor implements ModelProcessor {
     // because it will break plugins, that trying to update original pom file
     //   e.g. mvn versions:set -DnewVersion=1.0.0
     // That's why we need to add a build plugin that sets project pom file to git versioned pom file
-    addBuildPlugin(projectModel);
+    if (updateAttachedPom) {
+      addBuildPlugin(projectModel);
+    }
 
     log.info("");
     return projectModel;
@@ -410,10 +410,6 @@ public class GittleModelProcessor implements ModelProcessor {
           originalProjectCoords.toBuilder().setVersion(oldVersionInput),
           getGitVersion(versionFormat, originalProjectCoords.getVersion()));
 
-      // if (useRevision) {
-      //   log.warn("Using revision: {}", versionFormat);
-      //   updateRevision(projectModel, versionFormat);
-      // }
       updateParentVersion(projectModel, versionFormat);
       updateVersion(projectModel, versionFormat);
       updateDependencyVersions(projectModel, versionFormat);
@@ -424,10 +420,7 @@ public class GittleModelProcessor implements ModelProcessor {
     updatePropertyValues(projectModel, propertyFormats, originalProjectCoords);
     addProjectProperties(projectModel);
 
-    // if (!useRevision) {
     updateProfiles(projectModel, patchDescription, originalProjectCoords);
-    // }
-    // profile section
   }
 
   private void updateProfiles(
@@ -479,7 +472,6 @@ public class GittleModelProcessor implements ModelProcessor {
       @Nullable Map<String, String> propertyFormats,
       Coords originalProjectCoords) {
     Properties modelProps = model.getProperties();
-    // modelProps.remove("revision");
     if (Objects.isNull(propertyFormats) || propertyFormats.isEmpty()) {
       return;
     }
@@ -682,7 +674,7 @@ public class GittleModelProcessor implements ModelProcessor {
 
     log.debug("add version build plugin");
 
-    Plugin gitVersioningPlugin = GitVersioningMojo.asPluginWithExecution();
+    Plugin gitVersioningPlugin = UpdateAttachedMojo.asPluginWithExecution();
     if (projectModel.getBuild() == null) {
       projectModel.setBuild(new Build());
     }
@@ -937,35 +929,28 @@ public class GittleModelProcessor implements ModelProcessor {
     return value;
   }
 
-  private boolean getUpdatePomOption(final PatchDescription gitRefConfig) {
-    final String updatePomCommandOption = getCommandOption(OPTION_UPDATE_POM);
-    if (updatePomCommandOption != null) {
-      return parseBoolean(updatePomCommandOption);
-    }
-
-    //noinspection ReplaceNullCheck
-    if (gitRefConfig.updatePom != null) {
-      return gitRefConfig.updatePom;
-    }
-
-    return false;
+  private boolean getUpdateSourcePomOption(PatchDescription gitRefConfig) {
+    return Optional.ofNullable(getCommandOption(OPTION_UPDATE_SOURCE_POM))
+        .map(Boolean::parseBoolean)
+        .or(
+            () ->
+                Stream.of(gitRefConfig.updateSourcePom, config.getUpdateSourcePom())
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .map(TRUE::equals))
+        .orElse(FALSE);
   }
 
-  private boolean getUseRevisionOption(final PatchDescription gitRefConfig) {
-    final String useRevisionCommandOption = getCommandOption(OPTION_USE_REVISION);
-    if (useRevisionCommandOption != null) {
-      return parseBoolean(useRevisionCommandOption);
-    }
-
-    if (gitRefConfig.useRevision != null) {
-      return gitRefConfig.useRevision;
-    }
-
-    if (config.useRevision != null) {
-      return config.useRevision;
-    }
-
-    return false;
+  private boolean getUpdateAttachedPom(PatchDescription gitRefConfig) {
+    return Optional.ofNullable(getCommandOption(OPTION_UPDATE_ATTACHED_POM))
+        .map(Boolean::parseBoolean)
+        .or(
+            () ->
+                Stream.of(gitRefConfig.updateAttachedPom, config.getUpdateAttachedPom())
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .map(TRUE::equals))
+        .orElse(TRUE);
   }
 
   // ---- determine related projects
@@ -974,7 +959,7 @@ public class GittleModelProcessor implements ModelProcessor {
   private Set<Coords> determineRelatedProjects(Model projectModel) throws IOException {
     final HashSet<Coords> relatedProjects = new HashSet<>();
     determineRelatedProjects(projectModel, relatedProjects);
-    config.relatedProjects.stream()
+    config.getRelatedProjects().stream()
         .map(it -> Coords.of(it.groupId, it.artifactId, "*"))
         .forEach(relatedProjects::add);
     return relatedProjects;

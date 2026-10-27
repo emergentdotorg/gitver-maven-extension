@@ -6,13 +6,15 @@
 
 <refs>
 
-    <ref type="tag">
+    <ref>
+      <type>tag</type>
       <pattern><![CDATA[v(?<version>.*)]]></pattern>
       <version>${ref.version}</version>
-      <updatePom>true</updatePom>
+      <updateSourcePom>true</updateSourcePom>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>
         master
       </pattern>
@@ -24,7 +26,8 @@
       </properties>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>feature/(.+)</pattern>
       <version>${ref}-SNAPSHOT</version>
       <properties>

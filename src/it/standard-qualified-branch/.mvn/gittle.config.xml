@@ -6,17 +6,20 @@
 
 <refs considerTagsOnBranches="false">
 
-    <ref type="tag">
+    <ref>
+      <type>tag</type>
       <pattern><![CDATA[v(?<version>.*)]]></pattern>
       <version>${ref.version}</version>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>(main|master)</pattern>
       <version>${describe.tag.version.next}</version>
     </ref>
 
-    <ref type="branch">
+    <ref>
+      <type>branch</type>
       <pattern>.+</pattern>
       <version>${ref.slug}-${describe.distance}-${commit.short}-SNAPSHOT</version>
     </ref>
