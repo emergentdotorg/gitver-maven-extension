@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -245,7 +246,11 @@ public class GittleModelProcessor implements ModelProcessor {
     if (patchDescription.describeTagPattern != null
         && !patchDescription.describeTagPattern.equals(".*")) {
       log.info("  describeTagPattern: {}", patchDescription.describeTagPattern);
-      gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern());
+      Pattern pattern =
+          Optional.ofNullable(patchDescription.describeTagPattern)
+              .map(Pattern::compile)
+              .orElse(null);
+      gitSituation.setDescribeTagPattern(pattern);
     }
     if (patchDescription.describeTagFirstParent != null) {
       log.info("  describeTagFirstParent: {}", patchDescription.describeTagFirstParent);

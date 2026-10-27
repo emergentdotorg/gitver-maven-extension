@@ -77,7 +77,9 @@ class PropsUtil {
   @NullUnmarked
   private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
     return addLocalPlaceHolders(
-        new HashMap<>(globalFormatPlaceholderMap), config.projectVersionPattern(), projectVersion);
+        new HashMap<>(globalFormatPlaceholderMap),
+        Optional.ofNullable(config.projectVersionPattern).map(Pattern::compile).orElse(null),
+        projectVersion);
   }
 
   private static Map<String, Supplier<@Nullable String>> addLocalPlaceHolders(
@@ -258,7 +260,10 @@ class PropsUtil {
     placeholderMap.put("ref", () -> refName);
     placeholderMap.put("ref" + ".slug", refNameSlug);
 
-    final Pattern refPattern = gitVersionDetails.patchDescription().pattern();
+    final Pattern refPattern =
+        Optional.ofNullable(gitVersionDetails.patchDescription().pattern)
+            .map(Pattern::compile)
+            .orElse(null);
     if (refPattern != null) {
       // ref pattern groups
       for (Entry<String, @Nullable String> patternGroup :

@@ -12,7 +12,7 @@ class ConfigurationTest {
 
   @Test
   public void testDefaults() throws Exception {
-    Configuration config = Configuration.DEFAULT_INSTANCE.get();
+    Configuration config = Configuration.getDefault();
     assertThat(config).isNotNull();
     assertThat(config.getDisable()).isEqualTo(false);
     assertThat(config.getUseRevision()).isNull();

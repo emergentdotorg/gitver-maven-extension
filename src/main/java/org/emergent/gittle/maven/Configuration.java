@@ -2,6 +2,7 @@ package org.emergent.gittle.maven;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static org.emergent.gittle.maven.GitRefType.COMMIT;
 import static org.emergent.gittle.maven.MavenUtil.memoize;
 
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -22,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import lombok.EqualsAndHashCode;
@@ -39,7 +40,7 @@ import org.jspecify.annotations.NullUnmarked;
 @JacksonXmlRootElement(localName = "configuration")
 public class Configuration {
 
-  static final Supplier<Configuration> DEFAULT_INSTANCE =
+  private static final Supplier<Configuration> DEFAULT_SUPPLIER =
       memoize(
           Throwing.wrap(
               () -> {
@@ -48,7 +49,38 @@ public class Configuration {
                 return ProcessorUtil.readConfig(Objects.requireNonNull(loader.getResource(name)));
               }));
 
-  private static final String MATCH_ALL = ".*";
+  public static Configuration getDefault() {
+    return DEFAULT_SUPPLIER.get();
+  }
+
+  public static Configuration read(String content) throws IOException {
+    Configuration config =
+        XmlMapper.builder()
+            .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .build()
+            .readValue(content, Configuration.class);
+
+    List<PatchDescription> patchDescriptions = new ArrayList<>(config.refs.list);
+    if (config.rev != null) {
+      patchDescriptions.add(config.rev);
+    }
+    for (PatchDescription patchDescription : patchDescriptions) {
+      if (patchDescription.describeTagPattern == null) {
+        patchDescription.describeTagPattern = config.describeTagPattern;
+      }
+      if (patchDescription.describeTagFirstParent == null) {
+        patchDescription.describeTagFirstParent = config.describeTagFirstParent;
+      }
+      if (patchDescription.updatePom == null) {
+        patchDescription.updatePom = config.updatePom;
+      }
+      if (patchDescription.useRevision == null) {
+        patchDescription.useRevision = config.useRevision;
+      }
+    }
+
+    return config;
+  }
 
   public Boolean disable = false;
 
@@ -72,19 +104,6 @@ public class Configuration {
   @JacksonXmlElementWrapper
   @JsonProperty(required = true)
   public List<RelatedProject> relatedProjects = new ArrayList<>();
-
-  // @JsonIgnore
-  // public boolean isUseRevision() {
-  //   return Boolean.TRUE.equals(useRevision);
-  // }
-
-  public Pattern projectVersionPattern() {
-    return Optional.ofNullable(projectVersionPattern).map(Pattern::compile).orElse(null);
-  }
-
-  public Pattern describeTagPattern() {
-    return Optional.ofNullable(describeTagPattern).map(Pattern::compile).orElse(null);
-  }
 
   @Getter
   @ToString
@@ -112,12 +131,10 @@ public class Configuration {
 
     @JsonInclude(NON_EMPTY)
     @JacksonXmlElementWrapper(useWrapping = false)
-    // TODO  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
     public Map<String, String> properties = new HashMap<>();
 
     @JsonInclude(NON_EMPTY)
     @JacksonXmlElementWrapper(useWrapping = false)
-    // TODO  @JsonDeserialize(using = IgnoreWhitespaceDeserializer.class)
     public Map<String, String> userProperties = new HashMap<>();
 
     public Boolean updatePom = false;
@@ -125,16 +142,6 @@ public class Configuration {
     public Boolean useRevision;
 
     public Boolean describeTagFirstParent;
-
-    //
-    // @JsonIgnore
-    // public boolean isUseRevision() {
-    //   return Boolean.TRUE.equals(useRevision);
-    // }
-
-    public Pattern describeTagPattern() {
-      return Optional.ofNullable(describeTagPattern).map(Pattern::compile).orElse(null);
-    }
   }
 
   @Getter
@@ -155,10 +162,6 @@ public class Configuration {
       super(description);
       this.type = type;
       this.pattern = pattern != null ? pattern.pattern() : null;
-    }
-
-    public Pattern pattern() {
-      return Optional.ofNullable(pattern).map(Pattern::compile).orElse(null);
     }
   }
 

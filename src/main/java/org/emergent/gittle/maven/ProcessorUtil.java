@@ -1,6 +1,5 @@
 package org.emergent.gittle.maven;
 
-import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.lang.Math.ceil;
 import static java.lang.Math.floor;
 import static java.lang.Math.max;
@@ -12,7 +11,6 @@ import static org.emergent.gittle.maven.GitRefType.COMMIT;
 import static org.emergent.gittle.maven.GitRefType.TAG;
 import static org.emergent.gittle.maven.MavenUtil.pomFile;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.io.ByteStreams;
 import de.pdark.decentxml.Element;
 import java.io.File;
@@ -23,14 +21,15 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
@@ -40,7 +39,6 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.ReportPlugin;
 import org.apache.maven.model.Reporting;
-import org.emergent.gittle.maven.Configuration.PatchDescription;
 import org.emergent.gittle.maven.Configuration.RefPatchDescription;
 import org.jspecify.annotations.NullUnmarked;
 
@@ -57,7 +55,9 @@ class ProcessorUtil {
           {
             if (gitSituation.isDetached() || config.refs.considerTagsOnBranches) {
               for (String tag : sortedTags.get()) {
-                if (refConfig.pattern == null || refConfig.pattern().matcher(tag).matches()) {
+                Pattern pattern =
+                    Optional.ofNullable(refConfig.pattern).map(Pattern::compile).orElse(null);
+                if (pattern == null || pattern.matcher(tag).matches()) {
                   return new GitVersionDetails(gitSituation.getRev(), TAG, tag, refConfig);
                 }
               }
@@ -68,7 +68,9 @@ class ProcessorUtil {
           {
             if (!gitSituation.isDetached()) {
               String branch = gitSituation.getBranch();
-              if (refConfig.pattern == null || refConfig.pattern().matcher(branch).matches()) {
+              Pattern pattern =
+                  Optional.ofNullable(refConfig.pattern).map(Pattern::compile).orElse(null);
+              if (pattern == null || pattern.matcher(branch).matches()) {
                 return new GitVersionDetails(gitSituation.getRev(), BRANCH, branch, refConfig);
               }
             }
@@ -113,7 +115,7 @@ class ProcessorUtil {
 
   static Configuration readConfig(Path configFile) throws IOException {
     if (!Files.isRegularFile(configFile)) {
-      return Configuration.DEFAULT_INSTANCE.get();
+      return Configuration.getDefault();
     }
     return readConfig(Files.readString(configFile, StandardCharsets.UTF_8));
   }
@@ -126,33 +128,7 @@ class ProcessorUtil {
   }
 
   private static Configuration readConfig(String content) throws IOException {
-    Configuration config =
-        XmlMapper.builder()
-            .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
-            .build()
-            .readValue(content, Configuration.class);
-
-    // consider global config
-    List<PatchDescription> patchDescriptions = new ArrayList<>(config.refs.list);
-    if (config.rev != null) {
-      patchDescriptions.add(config.rev);
-    }
-    for (PatchDescription patchDescription : patchDescriptions) {
-      if (patchDescription.describeTagPattern == null) {
-        patchDescription.describeTagPattern = config.describeTagPattern;
-      }
-      if (patchDescription.describeTagFirstParent == null) {
-        patchDescription.describeTagFirstParent = config.describeTagFirstParent;
-      }
-      if (patchDescription.updatePom == null) {
-        patchDescription.updatePom = config.updatePom;
-      }
-      if (patchDescription.useRevision == null) {
-        patchDescription.useRevision = config.useRevision;
-      }
-    }
-
-    return config;
+    return Configuration.read(content);
   }
 
   @NullUnmarked
