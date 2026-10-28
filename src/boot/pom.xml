@@ -7,7 +7,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.emergent.gittle</groupId>
+  <groupId>org.emergent.gitver</groupId>
   <artifactId>boot</artifactId>
   <version>0.0.1</version>
   <packaging>pom</packaging>
@@ -59,7 +59,7 @@
           <workingDirectory>${workdir}</workingDirectory>
           <!--
           <arguments>
-            <argument>-Dmaven.ext.class.path=${org.emergent.gittle:gittle-maven-extension:jar}
+            <argument>-Dmaven.ext.class.path=${org.emergent.gitver:gitver-maven-extension:jar}
             </argument>
           </arguments>
           -->
@@ -116,8 +116,8 @@
       <id>exec</id>
       <dependencies>
         <dependency>
-          <groupId>org.emergent.gittle</groupId>
-          <artifactId>gittle-maven-extension</artifactId>
+          <groupId>org.emergent.gitver</groupId>
+          <artifactId>gitver-maven-extension</artifactId>
           <version>${bootver}</version>
         </dependency>
       </dependencies>

@@ -19,5 +19,5 @@ buildNumber.properties
 
 # Build generated files
 .flattened-pom.xml
-.gittle-pom.xml
+.gitver-pom.xml
 !.idea/codeStyles/Project.xml

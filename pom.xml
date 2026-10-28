@@ -6,8 +6,8 @@
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.emergent.gittle</groupId>
-  <artifactId>gittle-maven-extension</artifactId>
+  <groupId>org.emergent.gitver</groupId>
+  <artifactId>gitver-maven-extension</artifactId>
   <version>${revision}</version>
   <packaging>maven-plugin</packaging>
 
@@ -65,7 +65,7 @@
     <version.versions-maven-plugin>2.23.0</version.versions-maven-plugin>
   </properties>
 
-  <url>https://github.com/emergentdotorg/gittle</url>
+  <url>https://github.com/emergentdotorg/gitver</url>
   <inceptionYear>2025</inceptionYear>
 
   <organization>
@@ -90,15 +90,15 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/emergentdotorg/gittle</connection>
-    <developerConnection>scm:ssh:git@github.com:emergentdotorg/gittle</developerConnection>
+    <connection>scm:git:https://github.com/emergentdotorg/gitver</connection>
+    <developerConnection>scm:ssh:git@github.com:emergentdotorg/gitver</developerConnection>
     <tag>HEAD</tag>
-    <url>https://github.com/emergentdotorg/gittle</url>
+    <url>https://github.com/emergentdotorg/gitver</url>
   </scm>
 
   <issueManagement>
     <system>github.com</system>
-    <url>https://github.com/emergentdotorg/gittle/issues</url>
+    <url>https://github.com/emergentdotorg/gitver/issues</url>
   </issueManagement>
 
   <build>
@@ -107,14 +107,14 @@
         <filtering>true</filtering>
         <directory>src/main/resources</directory>
         <includes>
-          <include>**/gittle.properties</include>
+          <include>**/gitver.properties</include>
         </includes>
       </resource>
       <resource>
         <filtering>false</filtering>
         <directory>src/main/resources</directory>
         <excludes>
-          <exclude>**/gittle.properties</exclude>
+          <exclude>**/gitver.properties</exclude>
         </excludes>
       </resource>
     </resources>
@@ -438,7 +438,7 @@
             </goals>
             <configuration>
               <excludes>
-                <exclude>**/GittleMavenExtensionIT.java</exclude>
+                <exclude>**/GitverMavenExtensionIT.java</exclude>
               </excludes>
               <systemPropertyVariables>
                 <user.home>${project.build.testOutputDirectory}/testProjects/home</user.home>
@@ -453,7 +453,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
         <configuration>
-          <goalPrefix>gittle</goalPrefix>
+          <goalPrefix>gitver</goalPrefix>
         </configuration>
       </plugin>
 
@@ -947,7 +947,7 @@
                 <configuration>
                   <executable>${maven.multiModuleProjectDirectory}/mvnw</executable>
                   <arguments>
-                    <argument>-Dmaven.ext.class.path=${bootstrapdir}/local-repo/org/emergent/gittle/${project.artifactId}/${project.version}/${project.artifactId}-${project.version}.jar</argument>
+                    <argument>-Dmaven.ext.class.path=${bootstrapdir}/local-repo/org/emergent/gitver/${project.artifactId}/${project.version}/${project.artifactId}-${project.version}.jar</argument>
                     <argument>help:system</argument>
                   </arguments>
                   <environmentVariables>

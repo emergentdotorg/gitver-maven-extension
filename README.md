@@ -1,4 +1,4 @@
-# gittle
+# gitver
 
 Tools for generating and manipulating maven project versions from Git logs.
 
@@ -26,8 +26,8 @@ To use as a maven build extension, create (or modify) `extensions.xml` file in `
             xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0
                                 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
     <extension>
-        <groupId>org.emergent.gittle</groupId>
-        <artifactId>gittle-maven-extension</artifactId>
+        <groupId>org.emergent.gitver</groupId>
+        <artifactId>gitver-maven-extension</artifactId>
         <version>${latest-version-here}</version>
     </extension>
 </extensions>
@@ -96,7 +96,7 @@ A multi-module project example:
 
 
 See an example test project
-at [project-with-extension](gittle-maven-extension/src/test/resources/project-with-extension/).
+at [project-with-extension](gitver-maven-extension/src/test/resources/project-with-extension/).
 
 With just that configuration, next time your project runs any maven goals, you should see version from this module
 is used by Maven reactor. Try running `mvn package` on your project.
@@ -104,14 +104,14 @@ is used by Maven reactor. Try running `mvn package` on your project.
 ## Version Pattern Customization
 
 The default version pattern is `%t(-%B)(-%C)(-%S)(+%H)(.%D)`, but this can be customized by setting the
-`gittle.versionPattern` property in the `.mvn/gittle-maven-extension.properties` file.
+`gitver.versionPattern` property in the `.mvn/gitver-maven-extension.properties` file.
 
 The following example will generate versions as `major.minor.patch+shorthash`, eg. `1.2.3+a5a29f8`.
 
 Example configuration for version pattern
 ```properties
 # Will generate something like 1.2.3+a5a29f8
-gittle.versionPattern=%t+%h
+gitver.versionPattern=%t+%h
 ```
 
 Available Tokens for Version Pattern
@@ -147,16 +147,16 @@ This extension adds all the resolved properties to *Maven properties* during bui
 
 ```properties
 # example injected maven properties
-gittle.resolved.branch=main
-gittle.resolved.hash=67550ad6a64fe4e09bf9e36891c09b2f7bdc52f9
-gittle.resolved.hashShort=67550ad
-gittle.resolved.tagVersion=0.0.1
-gittle.resolved.commits=0
-gittle.resolved.dirty=false
-gittle.resolved.version=0.0.1
+gitver.resolved.branch=main
+gitver.resolved.hash=67550ad6a64fe4e09bf9e36891c09b2f7bdc52f9
+gitver.resolved.hashShort=67550ad
+gitver.resolved.tagVersion=0.0.1
+gitver.resolved.commits=0
+gitver.resolved.dirty=false
+gitver.resolved.version=0.0.1
 ```
 
-You may use these properties in maven pom file, for example as `${gittle.resolved.branch}` to access git branch name.
+You may use these properties in maven pom file, for example as `${gitver.resolved.branch}` to access git branch name.
 
 This extension can virtually set project version and properties, based on current **Git status**
 
@@ -188,7 +188,7 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
                                 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
     <extension>
         <groupId>me.qoomon</groupId>
-        <artifactId>gittle-maven-extension</artifactId>
+        <artifactId>gitver-maven-extension</artifactId>
         <version>9.12.0</version>
     </extension>
 </extensions>
@@ -198,18 +198,18 @@ create or update `${rootProjectDir}/.mvn/extensions.xml` file
 
 ℹ Consider [CI/CD](#cicd-setup) section when running this extension in a CI/CD environment
 
-Create `${rootProjectDir}/.mvn/gittle.config.xml`.
+Create `${rootProjectDir}/.mvn/gitver.config.xml`.
 
 You can configure the version and properties adjustments for specific branches and tags.
 
-**Example:** `gittle.config.xml`
+**Example:** `gitver.config.xml`
 
 ```xml
 <configuration
-  xmlns="http://emergentdotorg.github.io/gittle/configuration/1.0.0"
+  xmlns="http://emergentdotorg.github.io/gitver/configuration/1.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://emergentdotorg.github.io/gittle/configuration/1.0.0
-                      https://emergentdotorg.github.io/gittle/configuration/gittle-configuration-v1_0_0.xsd ">
+  xsi:schemaLocation="http://emergentdotorg.github.io/gitver/configuration/1.0.0
+                      https://emergentdotorg.github.io/gitver/configuration/gitver-configuration-v1_0_0.xsd ">
 
     <refs>
         <ref>
@@ -493,7 +493,7 @@ e.g `${dirty:+SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 ### IntelliJ - Multi Modules Projects
 
 For a flawless experience you need to disable this extension during project import, otherwise you'll get errors for modules depending on another module.
-To disable this extension during import add following Maven Importer VM options (`Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer`) `-Dgittle.disable=true`
+To disable this extension during import add following Maven Importer VM options (`Preferences > Build, Execution, Deployment > Build Tools > Maven > Importing > VM options for importer`) `-Dgitver.disable=true`
 
 *Related Issues*
 * https://youtrack.jetbrains.com/issue/IDEA-200272
@@ -577,5 +577,5 @@ gpg --list-keys
 ##### Debug
 
 ```shell
-mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.org.emergent.gittle.maven.gitversioning=debug
+mvn help:evaluate -Dexpression=project.version -Dorg.slf4j.simpleLogger.log.org.emergent.gitver.maven.gitversioning=debug
 ```
