@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,12 +64,22 @@ public class Configuration extends PatchDescription {
           Throwing.wrap(
               () -> {
                 String name = "schema/gitver-defaults.xml";
-                ClassLoader loader = ProcessorUtil.class.getClassLoader();
-                return ProcessorUtil.readConfig(requireNonNull(loader.getResource(name)));
+                ClassLoader loader = Configuration.class.getClassLoader();
+                return read(requireNonNull(loader.getResource(name)));
               }));
 
   public static Configuration getDefault() {
     return DEFAULT_SUPPLIER.get();
+  }
+
+  /**
+   * @return the configuration in <code>configFile</code>, or the defaults if it does not exist
+   */
+  public static Configuration readOrDefault(Path configFile) throws IOException {
+    if (!Files.isRegularFile(configFile)) {
+      return getDefault();
+    }
+    return read(Files.readString(configFile, StandardCharsets.UTF_8));
   }
 
   public static Configuration read(URL resource) throws IOException {

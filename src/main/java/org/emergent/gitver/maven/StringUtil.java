@@ -3,13 +3,32 @@ package org.emergent.gitver.maven;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 public final class StringUtil {
+
+  public static String nonNullOrEmpty(@Nullable String value) {
+    return nonNullOrElse(value, "");
+  }
+
+  public static <T> T nonNullOrElse(@Nullable T value, T defaultValue) {
+    return Objects.requireNonNullElse(value, defaultValue);
+  }
+
+  public static Map<String, Supplier<String>> nonNullOrEmpty(
+      Map<String, Supplier<@Nullable String>> map) {
+    return map.entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey, e -> () -> Optional.ofNullable(e.getValue().get()).orElse("")));
+  }
 
   public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
     StringBuilder result = new StringBuilder();

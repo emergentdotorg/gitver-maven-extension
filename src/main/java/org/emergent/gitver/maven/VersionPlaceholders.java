@@ -1,9 +1,13 @@
 package org.emergent.gitver.maven;
 
 import static org.apache.maven.shared.utils.StringUtils.leftPad;
+import static org.emergent.gitver.maven.StringUtil.nonNullOrElse;
+import static org.emergent.gitver.maven.StringUtil.nonNullOrEmpty;
 import static org.emergent.gitver.maven.StringUtil.patternGroupValues;
 import static org.emergent.gitver.maven.StringUtil.patternGroups;
-import static org.emergent.gitver.maven.StringUtil.substituteText;
+import static org.emergent.gitver.maven.VersionUtil.inc;
+import static org.emergent.gitver.maven.VersionUtil.matchVersion;
+import static org.emergent.gitver.maven.VersionUtil.nextVersion;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -11,88 +15,26 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
-@Value
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-// @lombok.Builder(toBuilder = true, setterPrefix = "set")
-class PropsUtil {
+/**
+ * Builds the <code>${...}</code> placeholder tables used when formatting versions and properties.
+ *
+ * <p>Global placeholders depend only on the git state and the maven session; local placeholders
+ * additionally depend on the version of the element being rewritten.
+ */
+final class VersionPlaceholders {
 
-  static final Pattern VERSION_PATTERN =
-      Pattern.compile(
-          ".*?(?<version>"
-              + "(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)"
-              + "(?:\\.(?<build>\\d+))?(?:-(?<label>.*))?"
-              + ")|");
-
-  private static final Pattern LABEL_TRAILING_NUM = Pattern.compile("^(.*?)(\\d*)$");
-
-  public static PropsUtil create(
-      GitSituation gitSituation,
-      GitVersionDetails gitVersionDetails,
-      GitverSession mavenSession,
-      Configuration config) {
-    return new PropsUtil(gitSituation, gitVersionDetails, mavenSession, config);
-  }
-
-  // GitSituation gitSituation;
-  // GitVersionDetails gitVersionDetails;
-  // MavenSession mavenSession;
-  Configuration config;
-  Map<String, Supplier<String>> globalFormatPlaceholderMap;
-
-  public PropsUtil(
-      GitSituation gitSituation,
-      GitVersionDetails gitVersionDetails,
-      GitverSession mavenSession,
-      Configuration config) {
-    this(config, generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, mavenSession));
-  }
-
-  public String getGitVersion(String versionFormat, String projectVersion) {
-    final Map<String, Supplier<String>> placeholderMap =
-        generateFormatPlaceholderMap(projectVersion);
-    return ProcessorUtil.slugify(substituteText(versionFormat, placeholderMap));
-  }
-
-  public String getGitPropertyValue(
-      Object propertyFormat, String originalValue, String projectVersion) {
-    final Map<String, Supplier<String>> placeholderMap =
-        generateFormatPlaceholderMap(projectVersion);
-    placeholderMap.put("value", () -> originalValue);
-    return substituteText(String.valueOf(propertyFormat), placeholderMap);
-  }
+  private VersionPlaceholders() {}
 
   @NullUnmarked
-  private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
-    return addLocalPlaceHolders(
-        new HashMap<>(globalFormatPlaceholderMap),
-        Optional.ofNullable(config.getProjectVersionPattern()).map(Pattern::compile).orElse(null),
-        projectVersion);
-  }
-
-  private static Map<String, Supplier<@Nullable String>> addLocalPlaceHolders(
-      Map<String, Supplier<@Nullable String>> placeholderMap,
-      @Nullable Pattern projectVersionPattern,
-      String projectVersion) {
-    Map<String, Supplier<String>> map = nonNullOrEmpty(placeholderMap);
-    addVersionLocalVersionPlaceHolders(map, projectVersionPattern, projectVersion);
-    return map;
-  }
-
-  @NullUnmarked
-  static void addVersionLocalVersionPlaceHolders(
+  static void addLocal(
       Map<String, Supplier<String>> placeholderMap,
       @Nullable Pattern projectVersionPattern,
       String projectVersion) {
@@ -163,7 +105,7 @@ class PropsUtil {
   }
 
   @NullMarked
-  static Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(
+  static Map<String, Supplier<String>> global(
       GitSituation gitSituation, GitVersionDetails gitVersionDetails, GitverSession mavenSession) {
 
     final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
@@ -256,7 +198,7 @@ class PropsUtil {
                     : "0000-01-01T00:00:00Z"));
 
     final String refName = gitVersionDetails.refName();
-    final Lazy<String> refNameSlug = Lazy.by(() -> ProcessorUtil.slugify(refName));
+    final Lazy<String> refNameSlug = Lazy.by(() -> VersionUtil.slugify(refName));
     placeholderMap.put("ref", () -> refName);
     placeholderMap.put("ref" + ".slug", refNameSlug);
 
@@ -282,7 +224,7 @@ class PropsUtil {
                   + "}");
         }
         placeholderMap.put(placeholderKey, () -> value);
-        placeholderMap.put(placeholderKey + ".slug", Lazy.by(() -> ProcessorUtil.slugify(value)));
+        placeholderMap.put(placeholderKey + ".slug", Lazy.by(() -> VersionUtil.slugify(value)));
       }
     }
 
@@ -432,7 +374,7 @@ class PropsUtil {
           Lazy.by(() -> nonNullOrEmpty(tagPatternValues.get().get(groupName)));
       placeholderMap.put(placeholderKey, groupValue);
       placeholderMap.put(
-          placeholderKey + ".slug", Lazy.by(() -> ProcessorUtil.slugify(groupValue.get())));
+          placeholderKey + ".slug", Lazy.by(() -> VersionUtil.slugify(groupValue.get())));
     }
 
     // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
@@ -447,63 +389,5 @@ class PropsUtil {
     System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
     return placeholderMap;
-  }
-
-  public static String nonNullOrEmpty(@Nullable String value) {
-    return nonNullOrElse(value, "");
-  }
-
-  public static <T> T nonNullOrElse(@Nullable T value, T defaultValue) {
-    return Objects.requireNonNullElse(value, defaultValue);
-  }
-
-  public static Map<String, Supplier<String>> nonNullOrEmpty(
-      Map<String, Supplier<@Nullable String>> map) {
-    return map.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey, e -> () -> Optional.ofNullable(e.getValue().get()).orElse("")));
-  }
-
-  @NullUnmarked
-  static Matcher matchVersion(String input) {
-    Matcher matcher = VERSION_PATTERN.matcher(input);
-    //noinspection ResultOfMethodCallIgnored
-    matcher.find();
-
-    return matcher;
-  }
-
-  @NullUnmarked
-  static String inc(String number, long increment) {
-    String sanitized = number.isEmpty() ? "0" : number;
-    return String.format("%01d", Long.parseLong(sanitized) + increment);
-  }
-
-  @NullUnmarked
-  static String nextVersion(Matcher m) {
-    String label = m.group("label");
-    if (label != null && !label.isEmpty()) {
-      Matcher tail = LABEL_TRAILING_NUM.matcher(label);
-      tail.matches();
-      String coreAndBuild =
-          m.group("core") + (m.group("build") != null ? "." + m.group("build") : "");
-      return coreAndBuild + "-" + tail.group(1) + inc(tail.group(2), 1);
-    }
-    if (m.group("build") != null) {
-      return m.group("major")
-          + "."
-          + m.group("minor")
-          + "."
-          + m.group("patch")
-          + "."
-          + inc(m.group("build"), 1);
-    } else if (m.group("patch") != null) {
-      return m.group("major") + "." + m.group("minor") + "." + inc(m.group("patch"), 1);
-    } else if (m.group("minor") != null) {
-      return m.group("major") + "." + inc(m.group("minor"), 1);
-    } else {
-      return inc(nonNullOrElse(m.group("major"), "0"), 1);
-    }
   }
 }

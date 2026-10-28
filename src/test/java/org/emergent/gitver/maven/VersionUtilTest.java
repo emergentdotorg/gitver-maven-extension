@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.regex.Matcher;
 import org.junit.jupiter.api.Test;
 
-class GitverModelProcessorTest {
+class VersionUtilTest {
 
   @Test
   void versionPattern_matchesFourSegmentTag() {
@@ -97,13 +97,13 @@ class GitverModelProcessorTest {
   }
 
   private static void assertNextVersion(String input, String expected) {
-    assertThat(PropsUtil.nextVersion(match(input)))
+    assertThat(VersionUtil.nextVersion(match(input)))
         .as("nextVersion(%s)", input)
         .isEqualTo(expected);
   }
 
   private static Matcher match(String input) {
-    Matcher m = PropsUtil.VERSION_PATTERN.matcher(input);
+    Matcher m = VersionUtil.VERSION_PATTERN.matcher(input);
     m.find();
     return m;
   }

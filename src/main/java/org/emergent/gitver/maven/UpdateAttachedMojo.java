@@ -1,6 +1,7 @@
 package org.emergent.gitver.maven;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -13,6 +14,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 @Mojo(name = UpdateAttachedMojo.GOAL, defaultPhase = LifecyclePhase.INITIALIZE, threadSafe = true)
 public class UpdateAttachedMojo extends AbstractMojo {
@@ -53,5 +55,59 @@ public class UpdateAttachedMojo extends AbstractMojo {
     execution.setGoals(List.of(GOAL));
     plugin.addExecution(execution);
     return plugin;
+  }
+
+  /**
+   * Adds this goal to the model's build, so the attached pom is switched to the git versioned pom
+   * once maven runs the project.
+   */
+  static void install(Model projectModel) {
+    Plugin gitVersioningPlugin = asPluginWithExecution();
+    if (projectModel.getBuild() == null) {
+      projectModel.setBuild(new Build());
+    }
+
+    // add at index 0 to be executed before any other project plugin,
+    // to prevent malfunctions with other plugins
+    projectModel.getBuild().getPlugins().add(0, gitVersioningPlugin);
+
+    // exclude this plugin from maven enforce plugin
+    {
+      LinkedList<Plugin> plugins = new LinkedList<>(projectModel.getBuild().getPlugins());
+      if (projectModel.getBuild().getPluginManagement() != null) {
+        plugins.addAll(projectModel.getBuild().getPluginManagement().getPlugins());
+      }
+      plugins.stream()
+          .filter(it -> it.getKey().equals("org.apache.maven.plugins:maven-enforcer-plugin"))
+          .forEach(
+              plugin ->
+                  plugin
+                      .getExecutions()
+                      .forEach(
+                          execution -> {
+                            Xpp3Dom configuration = (Xpp3Dom) execution.getConfiguration();
+                            if (configuration != null) {
+                              Xpp3Dom rules = configuration.getChild("rules");
+                              if (rules != null) {
+                                Xpp3Dom requirePluginVersions =
+                                    rules.getChild("requirePluginVersions");
+                                if (requirePluginVersions != null) {
+                                  Xpp3Dom unCheckedPluginList =
+                                      requirePluginVersions.getChild("unCheckedPluginList");
+                                  if (unCheckedPluginList == null) {
+                                    unCheckedPluginList = new Xpp3Dom("unCheckedPluginList");
+                                    requirePluginVersions.addChild(unCheckedPluginList);
+                                  }
+                                  // prepend git versioning plugin to unCheckedPluginList
+                                  unCheckedPluginList.setValue(
+                                      gitVersioningPlugin.getKey()
+                                          + ","
+                                          + Objects.requireNonNullElse(
+                                              unCheckedPluginList.getValue(), ""));
+                                }
+                              }
+                            }
+                          }));
+    }
   }
 }

@@ -1,6 +1,6 @@
 package org.emergent.gitver.maven;
 
-import static org.emergent.gitver.maven.PropsUtil.nonNullOrEmpty;
+import static org.emergent.gitver.maven.StringUtil.nonNullOrEmpty;
 
 import java.util.Comparator;
 import java.util.Objects;
