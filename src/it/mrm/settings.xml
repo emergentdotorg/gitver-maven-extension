@@ -2,7 +2,8 @@
 <settings>
   <mirrors>
     <mirror>
-      <id>mrm-maven-plugin</id>
+      <!--<id>mrm-maven-plugin</id>-->
+      <id>central-mirror</id>
       <name>Mock Repository Manager</name>
       <url>@mrm.repository.url@</url>
       <mirrorOf>*</mirrorOf>
@@ -13,7 +14,7 @@
       <id>it-repo</id>
       <repositories>
         <repository>
-          <id>snapshots</id>
+          <id>mrm</id>
           <url>@mrm.repository.url@</url>
           <releases>
             <enabled>true</enabled>
@@ -29,7 +30,7 @@
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>snapshots</id>
+          <id>mrm</id>
           <url>@mrm.repository.url@</url>
           <releases>
             <enabled>true</enabled>

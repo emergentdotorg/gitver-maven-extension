@@ -22,6 +22,7 @@
     <!--<groovy.version>4.0.33</groovy.version>-->
     <!--<maven-script-interpreter.version>1.9</maven-script-interpreter.version>-->
 
+    <bootstrapdir>${maven.multiModuleProjectDirectory}/bootstrap</bootstrapdir>
 
     <requiredMavenVersion>3.6.4</requiredMavenVersion>
     <maven.compiler.release>17</maven.compiler.release>
@@ -44,7 +45,7 @@
     <version.license-maven-plugin>2.7.0</version.license-maven-plugin>
     <version.maven-compiler-plugin>3.15.0</version.maven-compiler-plugin>
     <version.maven-dependency-plugin>3.11.0</version.maven-dependency-plugin>
-    <version.maven-deploy-plugin>3.1.4</version.maven-deploy-plugin>
+    <version.maven-deploy-plugin>3.2.0</version.maven-deploy-plugin>
     <version.maven-enforcer-plugin>3.6.3</version.maven-enforcer-plugin>
     <version.maven-failsafe-plugin>3.5.5</version.maven-failsafe-plugin>
     <version.maven-gpg-plugin>3.2.8</version.maven-gpg-plugin>
@@ -135,19 +136,12 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>${version.maven-dependency-plugin}</version>
-          <executions>
-            <execution>
-              <id>analyze</id>
-              <goals>
-                <goal>analyze-only</goal>
-              </goals>
-              <configuration>
-                <failOnWarning>true</failOnWarning>
-                <ignoreNonCompile>true</ignoreNonCompile>
-                <outputXML>true</outputXML>
-              </configuration>
-            </execution>
-          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${version.maven-deploy-plugin}</version>
         </plugin>
 
         <plugin>
@@ -180,6 +174,12 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.6.4</version>
         </plugin>
 
         <plugin>
@@ -400,6 +400,25 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>properties</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+            <configuration>
+              <failOnWarning>true</failOnWarning>
+              <ignoreNonCompile>true</ignoreNonCompile>
+              <outputXML>true</outputXML>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
@@ -435,6 +454,15 @@
         <artifactId>maven-plugin-plugin</artifactId>
         <configuration>
           <goalPrefix>gittle</goalPrefix>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+          <goals>install</goals>
         </configuration>
       </plugin>
 
@@ -778,7 +806,6 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>mrm-maven-plugin</artifactId>
-            <version>2.0.0</version>
             <executions>
               <execution>
                 <goals>
@@ -788,22 +815,20 @@
               </execution>
             </executions>
             <configuration>
-              <propertyName></propertyName>
               <repositories>
-                <!--<mockRepo>-->
-                <!--  <source>src/it/mrm/repository</source>-->
-                <!--  &lt;!&ndash; cloneTo>target/mock-repo</cloneTo &ndash;&gt;-->
-                <!--  &lt;!&ndash; cloneClean>true</cloneClean &ndash;&gt;-->
-                <!--  &lt;!&ndash; lazyArchiver>false</lazyArchiver &ndash;&gt;-->
-                <!--</mockRepo>-->
-                <!-- serve content installed by maven-invoker-plugin -->
                 <localRepo>
                   <source>${project.build.directory}/local-repo</source>
                 </localRepo>
-                <!--<proxyRepo/>-->
+                <proxyRepo/>
+                <!--
+                <hostedRepo>
+                  <target>${bootstrapdir}/repo</target>
+                </hostedRepo>
+                -->
               </repositories>
             </configuration>
           </plugin>
+
         </plugins>
       </build>
     </profile>
@@ -867,5 +892,159 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>deploy-bootstrap</id>
+      <activation>
+        <property>
+          <name>env.DEPLOY_SERVER</name>
+          <value>bootstrap</value>
+        </property>
+      </activation>
+      <properties>
+        <gpg.skip>true</gpg.skip>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+              <altDeploymentRepository>bootstrap::file://${bootstrapdir}/deploy-repo</altDeploymentRepository>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>bootstrap</id>
+      <build>
+        <plugins>
+          <!--
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>mvnw-dist</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <executable>${maven.multiModuleProjectDirectory}/mvnw</executable>
+                  <arguments>
+                    <argument>-Dmaven.ext.class.path=${bootstrapdir}/local-repo/org/emergent/gittle/${project.artifactId}/${project.version}/${project.artifactId}-${project.version}.jar</argument>
+                    <argument>help:system</argument>
+                  </arguments>
+                  <environmentVariables>
+                    <HOME>${bootstrapdir}/home</HOME>
+                    <MAVEN_OPTS/>
+                    <MAVEN_USER_HOME>${bootstrapdir}/home/.m2</MAVEN_USER_HOME>
+                  </environmentVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          -->
+
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>mrm-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>start</goal>
+                  <goal>stop</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <repositories>
+                <localRepo>
+                  <source>${bootstrapdir}/local-repo</source>
+                </localRepo>
+                <proxyRepo/>
+                <!--<hostedRepo>-->
+                <!--  <target>${bootstrapdir}/hosted-repo</target>-->
+                <!--</hostedRepo>-->
+              </repositories>
+            </configuration>
+          </plugin>
+          <!--
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-bootstrap-resources</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${bootstrapdir}</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>src/boot</directory>
+                      <filtering>true</filtering>
+                      <includes>
+                        <include>**/*.xml</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>bootstrap-deploy</id>
+                <goals>
+                  <goal>install</goal>
+                  <goal>integration-test</goal>
+                  <!--<goal>verify</goal>-->
+                </goals>
+                <configuration>
+                  <goals>
+                    <goal>-B</goal>
+                    <goal>-ntp</goal>
+                    <goal>clean</goal>
+                    <!--<goal>deploy</goal>-->
+                  </goals>
+                  <scope>runtime</scope>
+                  <cloneClean>false</cloneClean>
+                  <showErrors>true</showErrors>
+                  <showVersion>true</showVersion>
+                  <timeoutInSeconds>600</timeoutInSeconds>
+                  <pom>${project.basedir}/src/boot/pom.xml</pom>
+                  <cloneProjectsTo>${bootstrapdir}</cloneProjectsTo>
+                  <localRepositoryPath>${bootstrapdir}/local-repo</localRepositoryPath>
+                  <settingsFile>${bootstrapdir}/home/.m2/settings.xml</settingsFile>
+                  <properties>
+                    <user.home>${bootstrapdir}/home</user.home>
+                    <workdir>${project.basedir}</workdir>
+                  </properties>
+                  <environmentVariables>
+                    <DEPLOY_SERVER>bootstrap</DEPLOY_SERVER>
+                    <HOME>${bootstrapdir}/home</HOME>
+                    <MAVEN_OPTS/>
+                    <MAVEN_USER_HOME>${bootstrapdir}/home/.m2</MAVEN_USER_HOME>
+                  </environmentVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+
+
   </profiles>
 </project>

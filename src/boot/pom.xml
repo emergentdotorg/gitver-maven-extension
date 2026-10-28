@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.emergent.gittle</groupId>
+  <artifactId>boot</artifactId>
+  <version>0.0.1</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <workdir>${project.basedir}/..</workdir>
+    <!--<workdir>@workdir@</workdir>-->
+    <mvnbin>${workdir}/mvnw</mvnbin>
+    <userhome>${project.basedir}/home</userhome>
+  </properties>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.11.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.6.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <configuration>
+          <executable>${mvnbin}</executable>
+          <workingDirectory>${workdir}</workingDirectory>
+          <!--
+          <arguments>
+            <argument>-Dmaven.ext.class.path=${org.emergent.gittle:gittle-maven-extension:jar}
+            </argument>
+          </arguments>
+          -->
+          <environmentVariables>
+            <HOME>${userhome}</HOME>
+            <MAVEN_USER_HOME>${userhome}/.m2</MAVEN_USER_HOME>
+          </environmentVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <id>exec-clean</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>clean</phase>
+            <configuration>
+              <arguments combine.self="append">
+                <argument>clean</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>exec-install</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>install</phase>
+            <configuration>
+              <arguments combine.self="append">
+                <argument>install</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>exec-deploy</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>deploy</phase>
+            <configuration>
+              <arguments combine.self="append">
+                <argument>deploy</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+
+  <profiles>
+    <profile>
+      <id>exec</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.emergent.gittle</groupId>
+          <artifactId>gittle-maven-extension</artifactId>
+          <version>${bootver}</version>
+        </dependency>
+      </dependencies>
+      <build>
+
+        <plugins>
+          <!--
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>mrm-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>start</goal>
+                  <goal>stop</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <repositories>
+                <localRepo>
+                  <source>${project.build.directory}/local-repo</source>
+                </localRepo>
+                <proxyRepo/>
+                <hostedRepo>
+                  <target>${bootstrapdir}/repo</target>
+                </hostedRepo>
+              </repositories>
+            </configuration>
+          </plugin>
+          -->
+
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>properties</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
