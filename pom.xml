@@ -462,8 +462,20 @@
         <artifactId>maven-scm-plugin</artifactId>
         <version>2.2.1</version>
         <configuration>
+          <branch>devel</branch>
+          <scmBranch>devel</scmBranch>
+          <providerImplementations>
+            <git>jgit</git>
+          </providerImplementations>
           <goals>install</goals>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-provider-jgit</artifactId>
+            <version>2.2.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
       <plugin>
