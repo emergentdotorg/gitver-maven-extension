@@ -48,13 +48,5 @@ final class GitVersionDetailsResolver {
     }
 
     return Optional.empty();
-
-    // return config
-    //    .getRev()
-    //    .map(
-    //        options -> {
-    //          String commit = gitSituation.getRev();
-    //          return new GitVersionDetails(commit, commit, options);
-    //        });
   }
 }

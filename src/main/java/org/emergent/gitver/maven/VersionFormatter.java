@@ -36,10 +36,10 @@ final class VersionFormatter {
   }
 
   /** Formats the value of a property whose current value is <code>originalValue</code>. */
-  String formatProperty(Object propertyFormat, String originalValue, String projectVersion) {
+  String formatProperty(String propertyFormat, String originalValue, String projectVersion) {
     Map<String, Supplier<String>> placeholders = placeholders(projectVersion);
     placeholders.put("value", () -> originalValue);
-    return substituteText(String.valueOf(propertyFormat), placeholders);
+    return substituteText(propertyFormat, placeholders);
   }
 
   private Map<String, Supplier<String>> placeholders(String projectVersion) {

@@ -2,7 +2,6 @@ package org.emergent.gitver.maven;
 
 import static java.util.Objects.requireNonNull;
 import static org.emergent.gitver.git.GitRefType.COMMIT;
-import static org.emergent.gitver.maven.MavenUtil.memoize;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +14,7 @@ import lombok.Builder.Default;
 import lombok.Singular;
 import lombok.Value;
 import org.emergent.gitver.git.GitRefType;
+import org.emergent.gitver.util.Memoized;
 import org.emergent.gitver.util.Throwing;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 public class Configuration {
 
   private static final Supplier<Configuration> DEFAULT_SUPPLIER =
-      memoize(
+      Memoized.by(
           Throwing.wrap(
               () -> {
                 String name = "schema/gitver-defaults.xml";
@@ -35,7 +35,6 @@ public class Configuration {
   @Default boolean considerTagsOnBranches = false;
   @Nullable String projectVersionPattern;
   @Default RefConfig topConfig = RefConfig.getDefault();
-  // @Nullable RefConfig rev;
   @Singular List<RefConfig> refs;
   @Singular List<Coords> relatedProjects;
 
@@ -72,10 +71,6 @@ public class Configuration {
   public boolean isFollowFirstParentOnly() {
     return topConfig.isFollowFirstParentOnly();
   }
-
-  // public Optional<RefConfig> getRev() {
-  //  return Optional.ofNullable(rev);
-  // }
 
   @Value
   @lombok.Builder(setterPrefix = "set", toBuilder = true)

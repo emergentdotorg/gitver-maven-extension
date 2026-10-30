@@ -42,10 +42,6 @@ public class Coords implements Comparable<Coords> {
     return StringUtils.isEmpty(version) ? this : toBuilder().setVersion(null).build();
   }
 
-  public String getKey() {
-    return sansVersion().toString();
-  }
-
   @Override
   public String toString() {
     return Stream.of(groupId, artifactId, version)

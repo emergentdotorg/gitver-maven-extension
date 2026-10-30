@@ -20,7 +20,7 @@ public final class CommandOptions {
 
   private final GitverSession session;
 
-  CommandOptions(GitverSession session) {
+  public CommandOptions(GitverSession session) {
     this.session = session;
   }
 

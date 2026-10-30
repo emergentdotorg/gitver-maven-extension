@@ -4,17 +4,13 @@ import java.time.Instant;
 import java.util.Comparator;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.emergent.gitver.util.Throwing;
 
+/** Orders tags most relevant first: annotated tags by recency, then lightweight by version. */
 record GitTagComparator(RevWalk revWalk) implements Comparator<Ref> {
-
-  public GitTagComparator(Repository repository) {
-    this(new RevWalk(repository));
-  }
 
   @Override
   public int compare(Ref ref1, Ref ref2) {

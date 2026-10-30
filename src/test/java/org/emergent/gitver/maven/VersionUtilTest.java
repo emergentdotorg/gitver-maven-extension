@@ -96,6 +96,19 @@ class VersionUtilTest {
     assertNextVersion("1.2.3-RC1-final", "1.2.3-RC1-final1");
   }
 
+  @Test
+  void incLabel_bumpsTrailingNumber() {
+    assertThat(VersionUtil.incLabel("rc1", 1)).isEqualTo("rc2");
+    assertThat(VersionUtil.incLabel("rc9", 3)).isEqualTo("rc12");
+  }
+
+  @Test
+  void incLabel_appendsNumberWhenAbsent() {
+    assertThat(VersionUtil.incLabel("SNAPSHOT", 1)).isEqualTo("SNAPSHOT1");
+    assertThat(VersionUtil.incLabel("", 1)).isEqualTo("1");
+    assertThat(VersionUtil.incLabel("", 0)).isEqualTo("0");
+  }
+
   private static void assertNextVersion(String input, String expected) {
     assertThat(VersionUtil.nextVersion(match(input)))
         .as("nextVersion(%s)", input)

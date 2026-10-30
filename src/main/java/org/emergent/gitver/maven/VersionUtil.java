@@ -20,9 +20,6 @@ final class VersionUtil {
   private VersionUtil() {}
 
   static String slugify(String value) {
-    if (value == null) {
-      return "";
-    }
     return value.replace("/", "-");
   }
 
@@ -43,14 +40,20 @@ final class VersionUtil {
     return String.format("%01d", Long.parseLong(sanitized) + increment);
   }
 
+  /** Increments the trailing number of a label, e.g. <code>rc1</code> to <code>rc2</code>. */
+  static String incLabel(String label, long increment) {
+    Matcher tail = LABEL_TRAILING_NUM.matcher(label);
+    //noinspection ResultOfMethodCallIgnored
+    tail.matches();
+    return tail.group(1) + inc(tail.group(2), increment);
+  }
+
   static String nextVersion(Matcher m) {
     String label = m.group("label");
     if (label != null && !label.isEmpty()) {
-      Matcher tail = LABEL_TRAILING_NUM.matcher(label);
-      tail.matches();
       String coreAndBuild =
           m.group("core") + (m.group("build") != null ? "." + m.group("build") : "");
-      return coreAndBuild + "-" + tail.group(1) + inc(tail.group(2), 1);
+      return coreAndBuild + "-" + incLabel(label, 1);
     }
     if (m.group("build") != null) {
       return String.join(

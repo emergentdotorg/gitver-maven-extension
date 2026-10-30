@@ -69,10 +69,6 @@ final class ConfigurationXmlReader {
     RefConfig topConfig = readFallback(element);
     builder.setTopConfig(topConfig);
 
-    // Optional.ofNullable(child(element, "rev"))
-    //    .map(el -> readRefConfig(el, topConfig))
-    //    .ifPresent(builder::setRev);
-
     Optional.ofNullable(child(element, "refs"))
         .ifPresent(
             re -> {

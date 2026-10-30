@@ -40,40 +40,41 @@ final class GitverContextFactory {
       return Optional.empty();
     }
 
-    GitSituation gitSituation = new GitSituationFactory(options).create(pomFile);
-    if (gitSituation == null) {
+    GitSituation repositorySituation = new GitSituationFactory(options).create(pomFile);
+    if (repositorySituation == null) {
       log.warn("skip - project is not part of a git repository");
       return Optional.empty();
     }
-    logSituation(gitSituation);
+    logSituation(repositorySituation);
 
     GitVersionDetails versionDetails =
-        GitVersionDetailsResolver.resolve(gitSituation, config).orElse(null);
+        GitVersionDetailsResolver.resolve(repositorySituation, config).orElse(null);
     if (versionDetails == null) {
-      logNoMatchingRef(gitSituation, config);
+      logNoMatchingRef(repositorySituation, config);
       return Optional.empty();
     }
 
-    RefConfig patchDescription = versionDetails.patchOptions();
+    RefConfig refConfig = versionDetails.patchOptions();
     logRef(versionDetails);
-    gitSituation.setTagPattern(Pattern.compile(patchDescription.getTagPattern()));
-    gitSituation.setFirstParent(patchDescription.isFollowFirstParentOnly());
-    patchDescription.getVersion().ifPresent(version -> log.info("  version: {}", version));
-    if (!patchDescription.getProperties().isEmpty()) {
+    GitSituation gitSituation =
+        repositorySituation.withDescribeOptions(
+            Pattern.compile(refConfig.getTagPattern()), refConfig.isFollowFirstParentOnly());
+    refConfig.getVersion().ifPresent(version -> log.info("  version: {}", version));
+    if (!refConfig.getProperties().isEmpty()) {
       log.info("  properties: ");
-      patchDescription.getProperties().forEach((key, value) -> log.info("    {} - {}", key, value));
+      refConfig.getProperties().forEach((key, value) -> log.info("    {} - {}", key, value));
     }
 
     VersionFormatter formatter =
         new VersionFormatter(gitSituation, versionDetails, session, config);
 
-    publishUserProperties(patchDescription, formatter, projectModel);
+    publishUserProperties(refConfig, formatter, projectModel);
 
-    boolean updateSourcePom = resolveUpdateSourcePom(patchDescription);
+    boolean updateSourcePom = resolveUpdateSourcePom(refConfig);
     if (updateSourcePom) {
       log.info("  updateSourcePom: {}", updateSourcePom);
     }
-    boolean updateAttachedPom = resolveUpdateAttachedPom(patchDescription);
+    boolean updateAttachedPom = resolveUpdateAttachedPom(refConfig);
     if (updateAttachedPom) {
       log.info("  updateAttachedPom: {}", updateAttachedPom);
     }
@@ -87,15 +88,10 @@ final class GitverContextFactory {
     }
 
     log.info("");
+    ModelUpdater modelUpdater =
+        new ModelUpdater(formatter, relatedProjects, gitSituation, versionDetails, session);
     return Optional.of(
-        new GitverContext(
-            gitSituation,
-            versionDetails,
-            relatedProjects,
-            formatter,
-            session,
-            updateSourcePom,
-            updateAttachedPom));
+        new GitverContext(relatedProjects, modelUpdater, updateSourcePom, updateAttachedPom));
   }
 
   private Configuration readConfig(File mvnDirectory) throws IOException {
@@ -126,13 +122,13 @@ final class GitverContextFactory {
 
   /** User properties of the matching ref are made available to the whole maven session. */
   private void publishUserProperties(
-      RefConfig patchDescription, VersionFormatter formatter, Model projectModel) {
-    if (patchDescription.getUserProperties().isEmpty()) {
+      RefConfig refConfig, VersionFormatter formatter, Model projectModel) {
+    if (refConfig.getUserProperties().isEmpty()) {
       return;
     }
     log.info("  userProperties: ");
     String projectVersion = Coords.of(projectModel).getVersion();
-    patchDescription
+    refConfig
         .getUserProperties()
         .forEach(
             (key, value) -> {
@@ -181,7 +177,7 @@ final class GitverContextFactory {
   }
 
   private static void logNoMatchingRef(GitSituation gitSituation, Configuration config) {
-    log.warn("skip - no matching <ref> configuration and no <rev> configuration defined");
+    log.warn("skip - no matching <ref> configuration defined");
     log.warn("git refs:");
     log.warn("  branch: {}", gitSituation.getBranch());
     log.warn("  tags: {}", gitSituation.getTags());

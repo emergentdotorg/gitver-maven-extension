@@ -1,12 +1,15 @@
 package org.emergent.gitver.git;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.regex.Pattern;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -233,5 +236,51 @@ class GitSituationTest {
                       softly.assertThat(it.getBranch()).isNull();
                       softly.assertThat(it.getTags()).containsExactly(givenTag);
                     }));
+  }
+
+  @Test
+  void withBranch_normalizesRefs() throws GitAPIException, IOException {
+    Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+    git.commit().setMessage("init").setAllowEmpty(true).call();
+    GitSituation situation = new GitSituation(git.getRepository());
+
+    assertThat(situation.withBranch("refs/heads/feature/x").getBranch()).isEqualTo("feature/x");
+    assertThat(situation.withBranch("refs/pull/7/head").getBranch()).isEqualTo("pull/7/head");
+    assertThat(situation.withBranch(null).isDetached()).isTrue();
+    assertThatThrownBy(() -> situation.withBranch("refs/tags/v1"))
+        .isInstanceOf(IllegalArgumentException.class);
+    // the original is unchanged
+    assertThat(situation.getBranch()).isEqualTo(MASTER);
+  }
+
+  @Test
+  void withTags_replacesAndAddsTags() throws GitAPIException, IOException {
+    Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+    RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
+    git.tag().setName("v1").setObjectId(givenCommit).call();
+    GitSituation situation = new GitSituation(git.getRepository());
+
+    assertThat(situation.withAddedTag("refs/tags/v2").getTags()).containsExactly("v1", "v2");
+    assertThat(situation.withTags(List.of("refs/tags/v3")).getTags()).containsExactly("v3");
+    assertThatThrownBy(() -> situation.withTags(List.of("refs/heads/main")))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(situation.getTags()).containsExactly("v1");
+  }
+
+  @Test
+  void withDescribeOptions_describesAgainstMatchingTags() throws GitAPIException, IOException {
+    Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
+    RevCommit tagged = git.commit().setMessage("one").setAllowEmpty(true).call();
+    git.tag().setName("v1.0.0").setObjectId(tagged).call();
+    RevCommit otherTagged = git.commit().setMessage("two").setAllowEmpty(true).call();
+    git.tag().setName("other").setObjectId(otherTagged).call();
+    git.commit().setMessage("three").setAllowEmpty(true).call();
+    GitSituation situation = new GitSituation(git.getRepository());
+
+    assertThat(situation.getDescription().tag()).isEqualTo("other");
+    GitDescription description =
+        situation.withDescribeOptions(Pattern.compile("v.+"), true).getDescription();
+    assertThat(description.tag()).isEqualTo("v1.0.0");
+    assertThat(description.distance()).isEqualTo(2);
   }
 }

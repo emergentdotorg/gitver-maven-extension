@@ -4,7 +4,6 @@ import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_getWorkTree;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_resolveHead;
@@ -12,152 +11,180 @@ import static org.emergent.gitver.git.GitUtil.worktreesFix_resolveHead;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import lombok.Getter;
-import lombok.Setter;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import java.util.stream.Stream;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.util.Memoized;
-import org.emergent.gitver.util.MemoizedNullable;
 import org.jspecify.annotations.Nullable;
 
-public class GitSituation {
+/**
+ * The git state versions are derived from: the head commit, its branch and tags, and its
+ * description relative to the most recent matching tag.
+ *
+ * <p>Instances are immutable; the <code>with</code> methods return adjusted copies. Anything that
+ * requires reading the repository is computed lazily, at most once.
+ */
+public final class GitSituation {
 
-  private final Repository repository;
-  @Getter private final File rootDirectory;
+  private final Head head;
+  private final @Nullable String branch;
+  private final Supplier<List<String>> tags;
+  private final Pattern tagPattern;
+  private final boolean firstParent;
+  private final Supplier<GitDescription> description;
 
-  private final ObjectId head;
-  private final Supplier<ZonedDateTime> timestamp = Memoized.byThrowing(this::timestamp);
-  private Supplier<@Nullable String> branch = MemoizedNullable.byThrowing(this::branch);
-
-  private Supplier<List<String>> tags;
-
-  private final Supplier<Boolean> clean;
-
-  {
-    tags = Memoized.byThrowing(this::tags);
-    clean = Memoized.byThrowing(this::clean);
+  /** The situation of the repository's checked out head. */
+  public GitSituation(Repository repository) throws IOException {
+    this(new Head(repository), GitUtil.branch(repository), null, Pattern.compile(".*"), true);
   }
 
-  @Getter private Pattern tagPattern = Pattern.compile(".*");
+  private GitSituation(
+      Head head,
+      @Nullable String branch,
+      @Nullable Supplier<List<String>> tags,
+      Pattern tagPattern,
+      boolean firstParent) {
+    this.head = head;
+    this.branch = branch;
+    this.tags = tags != null ? tags : head.tags;
+    this.tagPattern = tagPattern;
+    this.firstParent = firstParent;
+    this.description =
+        Memoized.byThrowing(
+            () ->
+                GitUtil.describe(
+                    head.commit,
+                    tagPattern,
+                    head.repository,
+                    firstParent,
+                    head.tagsByCommit.get()));
+  }
 
-  @Getter @Setter private boolean firstParent = true;
-
-  private Supplier<GitDescription> description = Memoized.byThrowing(this::describe);
-
-  public GitSituation(Repository repository) throws IOException {
-    this.repository = repository;
-    this.rootDirectory = worktreesFix_getWorkTree(repository);
-    this.head = worktreesFix_resolveHead(repository);
+  public File getRootDirectory() {
+    return head.rootDirectory;
   }
 
   public String getRev() {
-    return head != null ? head.getName() : NO_COMMIT;
+    return head.commit != null ? head.commit.getName() : NO_COMMIT;
   }
 
   public ZonedDateTime getTimestamp() {
-    return timestamp.get();
+    return head.timestamp.get();
   }
 
   public @Nullable String getBranch() {
-    return branch.get();
-  }
-
-  protected void setBranch(@Nullable String branch) {
-    if (branch != null) {
-      if (branch.startsWith("refs/tags/")) {
-        throw new IllegalArgumentException("invalid branch ref" + branch);
-      }
-      branch =
-          branch
-              // support default branches (heads)
-              .replaceFirst("^refs/heads/", "")
-              // support other refs e.g. GitHub pull requests refs/pull/1000/head
-              .replaceFirst("^refs/", "");
-    }
-    String finalBranch = branch;
-    this.branch = () -> finalBranch;
+    return branch;
   }
 
   public boolean isDetached() {
-    return branch.get() == null;
+    return branch == null;
   }
 
   public List<String> getTags() {
     return tags.get();
   }
 
-  protected void addTag(String tag) {
-    requireNonNull(tag);
-
-    if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
-      throw new IllegalArgumentException("invalid tag ref" + tag);
-    }
-
-    String finalTag = tag.replaceFirst("^refs/tags/", "");
-
-    Supplier<List<String>> currentTags = this.tags;
-    this.tags =
-        Memoized.by(
-            () -> {
-              List<String> tags1 = new ArrayList<>(currentTags.get());
-              tags1.add(finalTag);
-              return tags1;
-            });
-  }
-
-  protected void setTags(List<String> tags) {
-    requireNonNull(tags);
-    tags.forEach(
-        tag -> {
-          requireNonNull(tag);
-          if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
-            throw new IllegalArgumentException("invalid tag ref" + tag);
-          }
-        });
-
-    tags = tags.stream().map(tag -> tag.replaceFirst("^refs/tags/", "")).collect(toList());
-
-    List<String> finalTags = tags;
-    this.tags = () -> finalTags;
-  }
-
   public boolean isClean() {
-    return clean.get();
+    return head.clean.get();
   }
 
-  public void setTagPattern(Pattern tagPattern) {
-    this.tagPattern = requireNonNull(tagPattern);
-    this.description = Memoized.byThrowing(this::describe);
+  public Pattern getTagPattern() {
+    return tagPattern;
   }
 
   public GitDescription getDescription() {
     return description.get();
   }
 
-  private ZonedDateTime timestamp() throws IOException {
-    return head != null
-        ? GitUtil.revTimestamp(repository, head)
-        : ZonedDateTime.ofInstant(EPOCH, UTC);
+  /**
+   * @param branch a branch name or ref, e.g. <code>refs/heads/main</code>; null for a detached head
+   */
+  public GitSituation withBranch(@Nullable String branch) {
+    return new GitSituation(head, normalizeBranch(branch), tags, tagPattern, firstParent);
   }
 
-  private @Nullable String branch() throws IOException {
-    return GitUtil.branch(repository);
+  /**
+   * @param tags tag names or refs, e.g. <code>refs/tags/v1.0.0</code>, replacing the head's tags
+   */
+  public GitSituation withTags(List<String> tags) {
+    List<String> names = tags.stream().map(GitSituation::normalizeTag).toList();
+    return new GitSituation(head, branch, () -> names, tagPattern, firstParent);
   }
 
-  private List<String> tags() throws IOException {
-    return head != null ? GitUtil.tagsPointAt(head, repository) : emptyList();
+  /**
+   * @param tag a tag name or ref, added to the head's tags
+   */
+  public GitSituation withAddedTag(String tag) {
+    String name = normalizeTag(tag);
+    Supplier<List<String>> current = tags;
+    Supplier<List<String>> added =
+        Memoized.by(() -> Stream.concat(current.get().stream(), Stream.of(name)).toList());
+    return new GitSituation(head, branch, added, tagPattern, firstParent);
   }
 
-  private boolean clean() throws GitAPIException {
-    return GitUtil.status(repository).isClean();
+  /**
+   * @param tagPattern the tags considered when describing the head
+   * @param firstParent whether to follow only the first parent of merge commits
+   */
+  public GitSituation withDescribeOptions(Pattern tagPattern, boolean firstParent) {
+    return new GitSituation(head, branch, tags, requireNonNull(tagPattern), firstParent);
   }
 
-  private GitDescription describe() throws IOException {
-    return GitUtil.describe(head, tagPattern, repository, firstParent);
+  private static @Nullable String normalizeBranch(@Nullable String branch) {
+    if (branch == null) {
+      return null;
+    }
+    if (branch.startsWith("refs/tags/")) {
+      throw new IllegalArgumentException("invalid branch ref: " + branch);
+    }
+    return branch
+        // support default branches (heads)
+        .replaceFirst("^refs/heads/", "")
+        // support other refs e.g. GitHub pull requests refs/pull/1000/head
+        .replaceFirst("^refs/", "");
+  }
+
+  private static String normalizeTag(String tag) {
+    requireNonNull(tag);
+    if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
+      throw new IllegalArgumentException("invalid tag ref: " + tag);
+    }
+    return tag.replaceFirst("^refs/tags/", "");
+  }
+
+  /** What is read from the repository, shared by all situations derived from it. */
+  private static final class Head {
+    private final Repository repository;
+    private final File rootDirectory;
+    private final @Nullable ObjectId commit;
+    private final Supplier<ZonedDateTime> timestamp;
+    private final Supplier<Boolean> clean;
+    private final Supplier<Map<ObjectId, List<String>>> tagsByCommit;
+    private final Supplier<List<String>> tags;
+
+    Head(Repository repository) throws IOException {
+      ObjectId commit = worktreesFix_resolveHead(repository);
+      this.repository = repository;
+      this.rootDirectory = worktreesFix_getWorkTree(repository);
+      this.commit = commit;
+      this.timestamp =
+          Memoized.byThrowing(
+              () ->
+                  commit != null
+                      ? GitUtil.revTimestamp(repository, commit)
+                      : ZonedDateTime.ofInstant(EPOCH, UTC));
+      this.clean = Memoized.byThrowing(() -> GitUtil.status(repository).isClean());
+      this.tagsByCommit = Memoized.byThrowing(() -> GitUtil.reverseTagRefMap(repository));
+      this.tags =
+          Memoized.by(
+              () ->
+                  commit != null
+                      ? tagsByCommit.get().getOrDefault(commit, emptyList())
+                      : emptyList());
+    }
   }
 }

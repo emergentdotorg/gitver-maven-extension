@@ -1,190 +1,170 @@
 package org.emergent.gitver.git;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.maven.CommandOptions;
-import org.emergent.gitver.util.Throwing;
+import org.emergent.gitver.util.StringUtil;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Gathers the {@link GitSituation} of a project: the repository state, overridden by command
- * options or by the environment of a supported CI system.
+ * options or, for a detached head, by the environment of a supported CI system.
  */
 @Slf4j
 public class GitSituationFactory {
 
   private final CommandOptions options;
+  private final Map<String, String> environment;
 
   public GitSituationFactory(CommandOptions options) {
+    this(options, System.getenv());
+  }
+
+  GitSituationFactory(CommandOptions options, Map<String, String> environment) {
     this.options = options;
+    this.environment = environment;
   }
 
   /**
    * @return the situation of the repository containing the pom, or null if there is none
    */
-  @Nullable
-  public GitSituation create(File pomFile) throws IOException {
-    File baseDirectory = pomFile.getParentFile();
-    Optional<Repository> repository = GitUtil.getRepository(baseDirectory);
-    return repository.map(repo -> Throwing.get(() -> new MyGitSituation(repo))).orElse(null);
+  public @Nullable GitSituation create(File pomFile) throws IOException {
+    Optional<Repository> repository = GitUtil.getRepository(pomFile.getParentFile());
+    if (repository.isEmpty()) {
+      return null;
+    }
+    GitSituation situation = new GitSituation(repository.get());
+    Optional<GitSituation> fromOptions = fromCommandOptions(situation);
+    if (fromOptions.isPresent()) {
+      return fromOptions.get();
+    }
+    // CI systems usually check out a detached head and name the branch or tag in the environment
+    if (situation.isDetached()) {
+      return fromCiEnvironment(situation).orElse(situation);
+    }
+    return situation;
   }
 
-  private class MyGitSituation extends GitSituation {
-
-    public MyGitSituation(Repository repository) throws IOException {
-      super(repository);
-      // --- commandline arguments and environment variables
-      {
-        {
-          String overrideBranch = options.get(CommandOptions.GIT_BRANCH);
-          String overrideTag = options.get(CommandOptions.GIT_TAG);
-          if (overrideBranch != null || overrideTag != null) {
-            setBranch(Optional.ofNullable(overrideBranch).map(String::trim).orElse(null));
-            setTags(Optional.ofNullable(overrideTag).map(String::trim).stream().toList());
-            return;
-          }
-        }
-
-        {
-          String providedRef = options.get(CommandOptions.GIT_REF);
-          if (providedRef != null) {
-            if (!providedRef.startsWith("refs/")) {
-              throw new IllegalArgumentException(
-                  "invalid provided ref " + providedRef + " -  needs to start with refs/");
-            }
-            if (providedRef.startsWith("refs/tags/")) {
-              setBranch(null);
-              setTags(singletonList(providedRef));
-            } else {
-              setBranch(providedRef);
-              setTags(emptyList());
-            }
-            return;
-          }
-        }
-      }
-
-      // --- try getting branch and tag situation from environment ---
-      // skip if we are on a branch
-      if (repository.getBranch() == null) {
-        return;
-      }
-
-      // GitHub Actions support
-      if ("true".equalsIgnoreCase(System.getenv("GITHUB_ACTIONS"))) {
-        if (!this.getRev().equals(System.getenv("GITHUB_SHA"))) {
-          return;
-        }
-
-        log.info("gather git situation from GitHub Actions environment variable: GITHUB_REF");
-        String githubRef = System.getenv("GITHUB_REF");
-        log.debug("  GITHUB_REF: {}", githubRef);
-
-        if (githubRef.startsWith("refs/tags/")) {
-          addTag(githubRef);
-        } else {
-          setBranch(githubRef);
-        }
-        return;
-      }
-
-      // GitLab CI support
-      if ("true".equalsIgnoreCase(System.getenv("GITLAB_CI"))) {
-        if (!this.getRev().equals(System.getenv("CI_COMMIT_SHA"))) {
-          return;
-        }
-
-        log.info(
-            "gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH,"
-                + " CI_MERGE_REQUEST_SOURCE_BRANCH_NAME and CI_COMMIT_TAG");
-        String commitBranch = System.getenv("CI_COMMIT_BRANCH");
-        String commitTag = System.getenv("CI_COMMIT_TAG");
-        String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-        log.debug("  CI_COMMIT_BRANCH: {}", commitBranch);
-        log.debug("  CI_COMMIT_TAG: {}", commitTag);
-        log.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: {}", mrSourceBranch);
-
-        if (commitBranch != null) {
-          setBranch(commitBranch);
-        } else if (mrSourceBranch != null) {
-          setBranch(mrSourceBranch);
-        } else if (commitTag != null) {
-          addTag(commitTag);
-        }
-        return;
-      }
-
-      // Circle CI support
-      if ("true".equalsIgnoreCase(System.getenv("CIRCLECI"))) {
-        if (!this.getRev().equals(System.getenv("CIRCLE_SHA1"))) {
-          return;
-        }
-
-        log.info(
-            "gather git situation from Circle CI environment variables: CIRCLE_BRANCH and"
-                + " CIRCLE_TAG");
-        String commitBranch = System.getenv("CIRCLE_BRANCH");
-        String commitTag = System.getenv("CIRCLE_TAG");
-        log.debug("  CIRCLE_BRANCH: {}", commitBranch);
-        log.debug("  CIRCLE_TAG: {}", commitTag);
-
-        if (commitBranch != null) {
-          setBranch(commitBranch);
-        } else if (commitTag != null) {
-          addTag(commitTag);
-        }
-        return;
-      }
-
-      // Jenkins support
-      if (System.getenv("JENKINS_HOME") != null
-          && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
-        if (!this.getRev().equals(System.getenv("GIT_COMMIT"))) {
-          return;
-        }
-        log.info(
-            "gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
-        String commitBranch = System.getenv("BRANCH_NAME");
-        String commitTag = System.getenv("TAG_NAME");
-        log.debug("  BRANCH_NAME: {}", commitBranch);
-        log.debug("  TAG_NAME: {}", commitTag);
-
-        if (commitBranch != null) {
-          if (commitBranch.equals(commitTag)) {
-            addTag(commitBranch);
-          } else {
-            setBranch(commitBranch);
-          }
-        } else if (commitTag != null) {
-          addTag(commitTag);
-        }
-        return;
-      }
+  private Optional<GitSituation> fromCommandOptions(GitSituation situation) {
+    String branch = trim(options.get(CommandOptions.GIT_BRANCH));
+    String tag = trim(options.get(CommandOptions.GIT_TAG));
+    if (branch != null || tag != null) {
+      log.debug("override git branch with {} and tags with {}", branch, tag);
+      return Optional.of(
+          situation.withBranch(branch).withTags(tag != null ? List.of(tag) : List.of()));
     }
 
-    @Override
-    protected void setBranch(@Nullable String branch) {
+    String ref = options.get(CommandOptions.GIT_REF);
+    if (ref == null) {
+      return Optional.empty();
+    }
+    if (!ref.startsWith("refs/")) {
+      throw new IllegalArgumentException(
+          "invalid provided ref " + ref + " - needs to start with refs/");
+    }
+    log.debug("override git ref with {}", ref);
+    return Optional.of(
+        ref.startsWith("refs/tags/")
+            ? situation.withBranch(null).withTags(List.of(ref))
+            : situation.withBranch(ref).withTags(List.of()));
+  }
+
+  private Optional<GitSituation> fromCiEnvironment(GitSituation situation) {
+    if ("true".equalsIgnoreCase(environment.get("GITHUB_ACTIONS"))) {
+      return fromGitHubActions(situation);
+    }
+    if ("true".equalsIgnoreCase(environment.get("GITLAB_CI"))) {
+      return fromGitLabCi(situation);
+    }
+    if ("true".equalsIgnoreCase(environment.get("CIRCLECI"))) {
+      return fromCircleCi(situation);
+    }
+    if (StringUtil.isNotBlank(environment.get("JENKINS_HOME"))) {
+      return fromJenkins(situation);
+    }
+    return Optional.empty();
+  }
+
+  private Optional<GitSituation> fromGitHubActions(GitSituation situation) {
+    if (!isHeadCommit(situation, "GITHUB_SHA")) {
+      return Optional.empty();
+    }
+    log.info("gather git situation from GitHub Actions environment variable: GITHUB_REF");
+    String ref = getenv("GITHUB_REF");
+    if (ref == null) {
+      return Optional.empty();
+    }
+    return ref.startsWith("refs/tags/")
+        ? withBranchOrTag(situation, null, ref)
+        : withBranchOrTag(situation, ref, null);
+  }
+
+  private Optional<GitSituation> fromGitLabCi(GitSituation situation) {
+    if (!isHeadCommit(situation, "CI_COMMIT_SHA")) {
+      return Optional.empty();
+    }
+    log.info(
+        "gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH,"
+            + " CI_MERGE_REQUEST_SOURCE_BRANCH_NAME and CI_COMMIT_TAG");
+    String branch = getenv("CI_COMMIT_BRANCH");
+    String tag = getenv("CI_COMMIT_TAG");
+    String mergeRequestBranch = getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+    return withBranchOrTag(situation, branch != null ? branch : mergeRequestBranch, tag);
+  }
+
+  private Optional<GitSituation> fromCircleCi(GitSituation situation) {
+    if (!isHeadCommit(situation, "CIRCLE_SHA1")) {
+      return Optional.empty();
+    }
+    log.info(
+        "gather git situation from Circle CI environment variables: CIRCLE_BRANCH and"
+            + " CIRCLE_TAG");
+    return withBranchOrTag(situation, getenv("CIRCLE_BRANCH"), getenv("CIRCLE_TAG"));
+  }
+
+  private Optional<GitSituation> fromJenkins(GitSituation situation) {
+    if (!isHeadCommit(situation, "GIT_COMMIT")) {
+      return Optional.empty();
+    }
+    log.info("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
+    String branch = getenv("BRANCH_NAME");
+    String tag = getenv("TAG_NAME");
+    // Jenkins sets BRANCH_NAME to the tag name when building a tag
+    return branch != null && branch.equals(tag)
+        ? withBranchOrTag(situation, null, tag)
+        : withBranchOrTag(situation, branch, tag);
+  }
+
+  /** The branch takes precedence; a tag is added to the tags of the head. */
+  private static Optional<GitSituation> withBranchOrTag(
+      GitSituation situation, @Nullable String branch, @Nullable String tag) {
+    if (branch != null) {
       log.debug("override git branch with {}", branch);
-      super.setBranch(branch);
+      return Optional.of(situation.withBranch(branch));
     }
-
-    @Override
-    protected void setTags(List<String> tags) {
-      log.debug("override git tags with single tag {}", tags);
-      super.setTags(tags);
-    }
-
-    @Override
-    protected void addTag(String tag) {
+    if (tag != null) {
       log.debug("add git tag {}", tag);
-      super.addTag(tag);
+      return Optional.of(situation.withAddedTag(tag));
     }
+    return Optional.empty();
+  }
+
+  private boolean isHeadCommit(GitSituation situation, String commitVariable) {
+    return situation.getRev().equals(environment.get(commitVariable));
+  }
+
+  private @Nullable String getenv(String name) {
+    String value = environment.get(name);
+    log.debug("  {}: {}", name, value);
+    return value;
+  }
+
+  private static @Nullable String trim(@Nullable String value) {
+    return value != null ? value.trim() : null;
   }
 }

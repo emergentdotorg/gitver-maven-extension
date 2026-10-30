@@ -5,15 +5,12 @@ import static java.nio.file.Files.readAllBytes;
 import de.pdark.decentxml.Document;
 import de.pdark.decentxml.XMLParser;
 import de.pdark.decentxml.XMLStringSource;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -23,7 +20,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.ModelBase;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.emergent.gitver.util.Memoized;
 import org.jspecify.annotations.Nullable;
@@ -32,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 final class MavenUtil {
 
   private static final Supplier<Properties> buildProperties =
-      memoize(
+      Memoized.by(
           () -> {
             ClassLoader loader = MavenUtil.class.getClassLoader();
             try (InputStream is = loader.getResourceAsStream(Constants.GITVER_PROPERTIES_PATH)) {
@@ -51,22 +47,6 @@ final class MavenUtil {
       return model;
     } catch (XmlPullParserException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  static Model readModel(Path pomFile) throws IOException {
-    try (BufferedReader reader = Files.newBufferedReader(pomFile, StandardCharsets.UTF_8)) {
-      Model model = new MavenXpp3Reader().read(reader);
-      model.setPomFile(pomFile.toFile());
-      return model;
-    } catch (XmlPullParserException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  static void writeModel(File pomFile, Model model) throws IOException {
-    try (FileWriter fileWriter = new FileWriter(pomFile, StandardCharsets.UTF_8)) {
-      new MavenXpp3Writer().write(fileWriter, model);
     }
   }
 
@@ -105,19 +85,9 @@ final class MavenUtil {
     return ((Model) model).getBuild();
   }
 
-  public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-    return Memoized.by(delegate);
-  }
-
   public static Coords gitverCoords() {
-    // Package pkg = MavenUtil.class.getPackage();
-    // String implVersion = pkg.getImplementationVersion();
-    // String version = StringUtil.isNotBlank(implVersion) ? implVersion : "unknown";
     Properties props = buildProperties.get();
     return Coords.builder()
-        // .setGroupId(Constants.MAVEN_GROUP_ID)
-        // .setArtifactId(Constants.MAVEN_ARTIFACT_ID)
-        // .setVersion(version)
         .setGroupId(props.getProperty("project.groupId"))
         .setArtifactId(props.getProperty("project.artifactId"))
         .setVersion(props.getProperty("project.version"))

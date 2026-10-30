@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -70,6 +69,7 @@ final class PomXmlWriter {
       return;
     }
 
+    // getChildren() returns a copy, so the revision property is removed through its parent
     ofNullable(propertiesEl.getChild("revision"))
         .ifPresent(
             node -> {
@@ -77,17 +77,8 @@ final class PomXmlWriter {
               log.debug("Removed project revision property");
             });
 
-    for (ListIterator<Element> it = propertiesEl.getChildren().listIterator(); it.hasNext(); ) {
-      Element propertyEl = it.next();
-      String propName = propertyEl.getName();
-
-      if ("revision".equals(propName)) {
-        log.debug("REMOVING {} property!", propName);
-        it.remove();
-        continue;
-      }
-
-      ofNullable(model.getProperties().getProperty(propName))
+    for (Element propertyEl : propertiesEl.getChildren()) {
+      ofNullable(model.getProperties().getProperty(propertyEl.getName()))
           .filter(v -> !v.equals(propertyEl.getText()))
           .ifPresent(propertyEl::setText);
     }
@@ -176,7 +167,7 @@ final class PomXmlWriter {
             buildEl -> {
               ofNullable(buildEl.getChild("plugins"))
                   .ifPresent(pluginsEl -> updatePlugins(pluginsEl, build.getPlugins()));
-              ofNullable(buildEl.getChild("pluginsManagement"))
+              ofNullable(buildEl.getChild("pluginManagement"))
                   .map(el -> el.getChild("plugins"))
                   .ifPresent(
                       pluginsEl ->

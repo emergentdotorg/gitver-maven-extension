@@ -4,17 +4,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 
-@Slf4j
 public final class StringUtil {
+
+  private StringUtil() {}
 
   public static String nonNullOrEmpty(@Nullable String value) {
     return nonNullOrElse(value, "");
@@ -22,23 +20,6 @@ public final class StringUtil {
 
   public static <T> T nonNullOrElse(@Nullable T value, T defaultValue) {
     return Objects.requireNonNullElse(value, defaultValue);
-  }
-
-  public static Map<String, Supplier<String>> nonNullOrEmpty(
-      Map<String, Supplier<@Nullable String>> map) {
-    return map.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                e ->
-                    () -> {
-                      try {
-                        return Optional.ofNullable(e.getValue().get()).orElse("");
-                      } catch (RuntimeException ex) {
-                        log.error("Exception resolving supplier for: {}", e.getKey(), ex);
-                        throw ex;
-                      }
-                    }));
   }
 
   public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
