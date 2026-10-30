@@ -1,4 +1,4 @@
-package org.emergent.gitver.maven;
+package org.emergent.gitver.git;
 
 public record GitDescription(String commit, String tag, int distance) {
 

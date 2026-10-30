@@ -1,7 +1,7 @@
 package org.emergent.gitver.maven;
 
-import static org.emergent.gitver.maven.StringUtil.nonNullOrEmpty;
-import static org.emergent.gitver.maven.StringUtil.substituteText;
+import static org.emergent.gitver.util.StringUtil.nonNullOrEmpty;
+import static org.emergent.gitver.util.StringUtil.substituteText;
 
 import java.util.HashMap;
 import java.util.Map;

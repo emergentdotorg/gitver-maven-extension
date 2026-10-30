@@ -1,4 +1,4 @@
-package org.emergent.gitver.maven;
+package org.emergent.gitver.util;
 
 import com.pivovarit.function.ThrowingConsumer;
 import com.pivovarit.function.ThrowingFunction;

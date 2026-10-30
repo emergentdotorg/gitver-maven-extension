@@ -1,4 +1,4 @@
-package org.emergent.gitver.maven;
+package org.emergent.gitver.util;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;

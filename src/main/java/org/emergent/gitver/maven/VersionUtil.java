@@ -1,6 +1,6 @@
 package org.emergent.gitver.maven;
 
-import static org.emergent.gitver.maven.StringUtil.nonNullOrElse;
+import static org.emergent.gitver.util.StringUtil.nonNullOrElse;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

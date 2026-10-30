@@ -3,6 +3,7 @@ package org.emergent.gitver.maven;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import org.emergent.gitver.git.GitRefType;
 import org.emergent.gitver.maven.Configuration.RefConfig;
 import org.junit.jupiter.api.Test;
 

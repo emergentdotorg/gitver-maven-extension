@@ -1,7 +1,7 @@
 package org.emergent.gitver.maven;
 
 import static java.util.Objects.requireNonNull;
-import static org.emergent.gitver.maven.GitRefType.COMMIT;
+import static org.emergent.gitver.git.GitRefType.COMMIT;
 import static org.emergent.gitver.maven.MavenUtil.memoize;
 
 import java.io.IOException;
@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 import lombok.Builder.Default;
 import lombok.Singular;
 import lombok.Value;
+import org.emergent.gitver.git.GitRefType;
+import org.emergent.gitver.util.Throwing;
 import org.jspecify.annotations.Nullable;
 
 @Value

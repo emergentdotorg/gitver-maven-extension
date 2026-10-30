@@ -20,6 +20,7 @@ import org.apache.maven.model.Profile;
 import org.apache.maven.model.ReportPlugin;
 import org.emergent.gitver.git.GitSituation;
 import org.emergent.gitver.maven.Configuration.RefConfig;
+import org.emergent.gitver.util.StringUtil;
 
 /**
  * Applies calculated versions and git properties to the in-memory maven {@link Model}. Versions are

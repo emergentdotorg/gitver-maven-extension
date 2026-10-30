@@ -21,8 +21,7 @@ import lombok.Setter;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
-import org.emergent.gitver.maven.GitDescription;
-import org.emergent.gitver.maven.Lazy;
+import org.emergent.gitver.util.Lazy;
 import org.jspecify.annotations.NullUnmarked;
 
 @NullUnmarked

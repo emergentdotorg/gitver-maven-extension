@@ -17,7 +17,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.emergent.gitver.maven.GitDescription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -31,8 +31,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.emergent.gitver.maven.GitDescription;
-import org.emergent.gitver.maven.Throwing;
+import org.emergent.gitver.util.Throwing;
 import org.jspecify.annotations.Nullable;
 
 public final class GitUtil {

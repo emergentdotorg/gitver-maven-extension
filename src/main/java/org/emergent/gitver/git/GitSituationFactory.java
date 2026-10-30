@@ -10,7 +10,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.maven.CommandOptions;
-import org.emergent.gitver.maven.Throwing;
+import org.emergent.gitver.util.Throwing;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;

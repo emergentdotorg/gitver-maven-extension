@@ -1,4 +1,4 @@
-package org.emergent.gitver.maven;
+package org.emergent.gitver.util;
 
 import java.util.HashMap;
 import java.util.HashSet;

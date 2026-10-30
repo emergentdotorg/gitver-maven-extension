@@ -1,13 +1,13 @@
 package org.emergent.gitver.maven;
 
 import static org.apache.maven.shared.utils.StringUtils.leftPad;
-import static org.emergent.gitver.maven.StringUtil.nonNullOrElse;
-import static org.emergent.gitver.maven.StringUtil.nonNullOrEmpty;
-import static org.emergent.gitver.maven.StringUtil.patternGroupValues;
-import static org.emergent.gitver.maven.StringUtil.patternGroups;
 import static org.emergent.gitver.maven.VersionUtil.inc;
 import static org.emergent.gitver.maven.VersionUtil.matchVersion;
 import static org.emergent.gitver.maven.VersionUtil.nextVersion;
+import static org.emergent.gitver.util.StringUtil.nonNullOrElse;
+import static org.emergent.gitver.util.StringUtil.nonNullOrEmpty;
+import static org.emergent.gitver.util.StringUtil.patternGroupValues;
+import static org.emergent.gitver.util.StringUtil.patternGroups;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -22,7 +22,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.emergent.gitver.git.GitDescription;
 import org.emergent.gitver.git.GitSituation;
+import org.emergent.gitver.util.Lazy;
+import org.emergent.gitver.util.StringUtil;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;

@@ -2,6 +2,7 @@ package org.emergent.gitver.maven;
 
 import static java.util.Objects.requireNonNull;
 
+import org.emergent.gitver.git.GitRefType;
 import org.emergent.gitver.maven.Configuration.RefConfig;
 
 record GitVersionDetails(String commit, String refName, RefConfig patchOptions) {
