@@ -38,50 +38,43 @@ final class VersionPlaceholders {
 
   private VersionPlaceholders() {}
 
-  static void addLocal(
-      Map<String, Supplier<String>> placeholderMap,
+  static Map<String, Supplier<String>> addLocal(
+      Map<String, Supplier<String>> placeholders,
       @Nullable Pattern projectVersionPattern,
       String projectVersion) {
-    placeholderMap.put("version", Memoized.of(projectVersion));
+    LookupWrapper lookup = new LookupWrapper(placeholders);
+    lookup.put("version", Memoized.of(projectVersion));
     // placeholderMap.put("revision", Lazy.of(projectVersion));
 
     Supplier<Matcher> verComps = by(() -> matchVersion(projectVersion));
 
-    placeholderMap.put(
-        "version.core", by(() -> nonNullOrElse(verComps.get().group("core"), "0.0.0")));
+    lookup.put("version.core", by(() -> nonNullOrElse(verComps.get().group("core"), "0.0.0")));
 
-    placeholderMap.put(
-        "version.major", by(() -> nonNullOrElse(verComps.get().group("major"), "0")));
-    placeholderMap.put(
-        "version.major.next", by(() -> inc(placeholderMap.get("version.major").get(), 1)));
+    lookup.put("version.major", by(() -> nonNullOrElse(verComps.get().group("major"), "0")));
+    lookup.put("version.major.next", by(() -> inc(lookup.get("version.major"))));
 
-    placeholderMap.put(
-        "version.minor", by(() -> nonNullOrElse(verComps.get().group("minor"), "0")));
-    placeholderMap.put(
-        "version.minor.next", by(() -> inc(placeholderMap.get("version.minor").get(), 1)));
+    lookup.put("version.minor", by(() -> nonNullOrElse(verComps.get().group("minor"), "0")));
+    lookup.put("version.minor.next", by(() -> inc(lookup.get("version.minor"))));
 
-    placeholderMap.put(
-        "version.patch", by(() -> nonNullOrElse(verComps.get().group("patch"), "0")));
-    placeholderMap.put(
-        "version.patch.next", by(() -> inc(placeholderMap.get("version.patch").get(), 1)));
+    lookup.put("version.patch", by(() -> nonNullOrElse(verComps.get().group("patch"), "0")));
+    lookup.put("version.patch.next", by(() -> inc(lookup.get("version.patch"))));
 
-    placeholderMap.put("version.build", by(() -> nonNullOrElse(verComps.get().group("build"), "")));
-    placeholderMap.put(
-        "version.build.next", by(() -> inc(placeholderMap.get("version.build").get(), 1)));
+    lookup.put("version.build", by(() -> nonNullOrElse(verComps.get().group("build"), "")));
+    lookup.put("version.build.next", by(() -> inc(lookup.get("version.build"))));
 
-    placeholderMap.put("version.label", by(() -> nonNullOrElse(verComps.get().group("label"), "")));
-    placeholderMap.put(
+    lookup.put("version.label", by(() -> nonNullOrElse(verComps.get().group("label"), "")));
+    lookup.put(
         "version.label.prefixed",
         by(
             () -> {
-              String label = placeholderMap.get("version.label").get();
+              String label = lookup.get("version.label");
               return !label.isEmpty() ? "-" + label : "";
             }));
 
-    placeholderMap.put("version.next", by(() -> nextVersion(verComps.get())));
+    lookup.put("version.next", by(() -> nextVersion(verComps.get())));
 
     // deprecated
-    placeholderMap.put("version.release", by(() -> projectVersion.replaceFirst("-.*$", "")));
+    lookup.put("version.release", by(() -> projectVersion.replaceFirst("-.*$", "")));
 
     // Now time for placeholders based on the version pattern
     Optional.ofNullable(projectVersionPattern)
@@ -92,7 +85,7 @@ final class VersionPlaceholders {
                       (groupName, value) -> {
                         var placeholderKey = "version." + groupName;
                         // ensure no placeholder overwrites
-                        if (placeholderMap.containsKey(placeholderKey)) {
+                        if (lookup.containsKey(placeholderKey)) {
                           throw new IllegalArgumentException(
                               "project version pattern capture group can not be named '"
                                   + groupName
@@ -100,45 +93,45 @@ final class VersionPlaceholders {
                                   + placeholderKey
                                   + "}");
                         }
-                        placeholderMap.put(
-                            placeholderKey, () -> Optional.ofNullable(value).orElse(""));
+                        lookup.put(placeholderKey, () -> Optional.ofNullable(value).orElse(""));
                       });
             });
+    return lookup.map();
   }
 
   static Map<String, Supplier<String>> global(
-      GitSituation gitSituation, GitVersionDetails gitVersionDetails, GitverSession mavenSession) {
+      GitSituation situation, GitVersionDetails versionDetails, GitverSession session) {
 
-    Map<String, Supplier<String>> placeholderMap = new HashMap<>();
+    LookupWrapper lookup = new LookupWrapper();
 
-    Memoized<String> hash = by(gitSituation::getRev);
-    placeholderMap.put("commit", hash);
-    placeholderMap.put("commit.short", by(() -> hash.get().substring(0, 7)));
+    Memoized<String> hash = by(situation::getRev);
+    lookup.put("commit", hash);
+    lookup.put("commit.short", by(() -> hash.get().substring(0, 7)));
 
-    Memoized<ZonedDateTime> headCommitDateTime = by(gitSituation::getTimestamp);
-    placeholderMap.put(
+    Memoized<ZonedDateTime> headCommitDateTime = by(situation::getTimestamp);
+    lookup.put(
         "commit.timestamp", by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.year", by(() -> String.valueOf(headCommitDateTime.get().getYear())));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.year.2digit",
         by(() -> String.valueOf(headCommitDateTime.get().getYear() % 100)));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.month",
         by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMonthValue()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.day",
         by(() -> leftPad(String.valueOf(headCommitDateTime.get().getDayOfMonth()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.hour",
         by(() -> leftPad(String.valueOf(headCommitDateTime.get().getHour()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.minute",
         by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.second",
         by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.datetime",
         by(
             () ->
@@ -147,7 +140,7 @@ final class VersionPlaceholders {
                         .get()
                         .format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss"))
                     : "00000101.000000"));
-    placeholderMap.put(
+    lookup.put(
         "commit.timestamp.iso",
         by(
             () ->
@@ -156,30 +149,30 @@ final class VersionPlaceholders {
                     : "0000-01-01T00:00:00Z"));
 
     Memoized<ZonedDateTime> buildCommitDateTime =
-        by(() -> mavenSession.getStart().atZone(ZoneId.systemDefault()));
-    placeholderMap.put(
+        by(() -> session.getStart().atZone(ZoneId.systemDefault()));
+    lookup.put(
         "build.timestamp", by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.year", by(() -> String.valueOf(buildCommitDateTime.get().getYear())));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.year.2digit",
         by(() -> String.valueOf(buildCommitDateTime.get().getYear() % 100)));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.month",
         by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMonthValue()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.day",
         by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getDayOfMonth()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.hour",
         by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getHour()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.minute",
         by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getMinute()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.second",
         by(() -> leftPad(String.valueOf(buildCommitDateTime.get().getSecond()), 2, "0")));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.datetime",
         by(
             () ->
@@ -188,7 +181,7 @@ final class VersionPlaceholders {
                         .get()
                         .format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss"))
                     : "00000000.000000"));
-    placeholderMap.put(
+    lookup.put(
         "build.timestamp.iso",
         by(
             () ->
@@ -196,12 +189,12 @@ final class VersionPlaceholders {
                     ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT)
                     : "0000-01-01T00:00:00Z"));
 
-    String refName = gitVersionDetails.refName();
+    String refName = versionDetails.refName();
     Memoized<String> refNameSlug = by(() -> VersionUtil.slugify(refName));
-    placeholderMap.put("ref", () -> refName);
-    placeholderMap.put("ref" + ".slug", refNameSlug);
+    lookup.put("ref", () -> refName);
+    lookup.put("ref" + ".slug", refNameSlug);
 
-    gitVersionDetails
+    versionDetails
         .patchOptions()
         .getPattern()
         .map(Pattern::compile)
@@ -215,7 +208,7 @@ final class VersionPlaceholders {
 
                 var placeholderKey = "ref." + groupName;
                 // ensure no placeholder overwrites
-                if (placeholderMap.containsKey(placeholderKey)) {
+                if (lookup.containsKey(placeholderKey)) {
                   throw new IllegalArgumentException(
                       "ref pattern capture group can not be named '"
                           + groupName
@@ -223,143 +216,110 @@ final class VersionPlaceholders {
                           + placeholderKey
                           + "}");
                 }
-                placeholderMap.put(placeholderKey, () -> value);
-                placeholderMap.put(placeholderKey + ".slug", by(() -> VersionUtil.slugify(value)));
+                lookup.put(placeholderKey, () -> value);
+                lookup.put(placeholderKey + ".slug", by(() -> VersionUtil.slugify(value)));
               }
             });
 
     // dirty
-    Memoized<Boolean> dirty = by(() -> !gitSituation.isClean());
-    placeholderMap.put("dirty", by(() -> dirty.get() ? ".dirty" : ""));
-    placeholderMap.put("dirty.snapshot", by(() -> dirty.get() ? "-SNAPSHOT" : ""));
+    Memoized<Boolean> dirty = by(() -> !situation.isClean());
+    lookup.put("dirty", by(() -> dirty.get() ? ".dirty" : ""));
+    lookup.put("dirty.snapshot", by(() -> dirty.get() ? "-SNAPSHOT" : ""));
 
     // describe
-    Memoized<GitDescription> description = by(gitSituation::getDescription);
-    placeholderMap.put("describe", by(() -> description.get().toString()));
+    Memoized<GitDescription> description = by(situation::getDescription);
+    lookup.put("describe", by(() -> description.get().toString()));
     Memoized<String> descriptionTag = by(() -> description.get().tag());
-    placeholderMap.put("describe.tag", descriptionTag);
+    lookup.put("describe.tag", descriptionTag);
     Memoized<Integer> descriptionDistance = by(() -> description.get().distance());
-    placeholderMap.put("describe.distance", by(() -> String.valueOf(descriptionDistance.get())));
-    placeholderMap.put(
+    lookup.put("describe.distance", by(() -> String.valueOf(descriptionDistance.get())));
+    lookup.put(
         "describe.distance.snapshot",
         by(() -> (descriptionDistance.get() == 0 ? "" : "-SNAPSHOT")));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.snapshot",
         by(() -> dirty.get() || descriptionDistance.get() != 0 ? "-SNAPSHOT" : ""));
 
     Memoized<Matcher> descriptionTagVersionMatcher = by(() -> matchVersion(descriptionTag.get()));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("version"), "0.0.0")));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.core",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("core"), "0")));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.major",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("major"), "0")));
-    placeholderMap.put(
-        "describe.tag.version.major.next",
-        by(() -> inc(placeholderMap.get("describe.tag.version.major").get(), 1)));
+    lookup.put(
+        "describe.tag.version.major.next", by(() -> inc(lookup.get("describe.tag.version.major"))));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.minor",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("minor"), "0")));
-    placeholderMap.put(
-        "describe.tag.version.minor.next",
-        by(() -> inc(placeholderMap.get("describe.tag.version.minor").get(), 1)));
+    lookup.put(
+        "describe.tag.version.minor.next", by(() -> inc(lookup.get("describe.tag.version.minor"))));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.patch",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("patch"), "0")));
-    placeholderMap.put(
-        "describe.tag.version.patch.next",
-        by(() -> inc(placeholderMap.get("describe.tag.version.patch").get(), 1)));
+    lookup.put(
+        "describe.tag.version.patch.next", by(() -> inc(lookup.get("describe.tag.version.patch"))));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.build",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("build"), "")));
-    placeholderMap.put(
-        "describe.tag.version.build.next",
-        by(() -> inc(placeholderMap.get("describe.tag.version.build").get(), 1)));
+    lookup.put(
+        "describe.tag.version.build.next", by(() -> inc(lookup.get("describe.tag.version.build"))));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.label",
         by(() -> nonNullOrElse(descriptionTagVersionMatcher.get().group("label"), "")));
-    placeholderMap.put(
-        "describe.tag.version.label.next",
-        by(() -> inc(placeholderMap.get("describe.tag.version.label").get(), 1)));
+    lookup.put(
+        "describe.tag.version.label.next", by(() -> inc(lookup.get("describe.tag.version.label"))));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.next", by(() -> nextVersion(descriptionTagVersionMatcher.get())));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.next.snapshot",
-        by(
-            () ->
-                placeholderMap.get("describe.tag.version.next").get()
-                    + placeholderMap.get("describe.snapshot").get()));
+        by(() -> lookup.get("describe.tag.version.next") + lookup.get("describe.snapshot")));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.patch.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.patch").get(),
-                    descriptionDistance.get())));
-    placeholderMap.put(
+        by(() -> inc(lookup.get("describe.tag.version.patch"), descriptionDistance.get())));
+    lookup.put(
         "describe.tag.version.patch.next.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.patch.next").get(),
-                    descriptionDistance.get())));
+        by(() -> inc(lookup.get("describe.tag.version.patch.next"), descriptionDistance.get())));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.build.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.build").get(),
-                    descriptionDistance.get())));
-    placeholderMap.put(
+        by(() -> inc(lookup.get("describe.tag.version.build"), descriptionDistance.get())));
+    lookup.put(
         "describe.tag.version.build.next.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.build.next").get(),
-                    descriptionDistance.get())));
+        by(() -> inc(lookup.get("describe.tag.version.build.next"), descriptionDistance.get())));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.label.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.label").get(),
-                    descriptionDistance.get())));
-    placeholderMap.put(
+        by(() -> inc(lookup.get("describe.tag.version.label"), descriptionDistance.get())));
+    lookup.put(
         "describe.tag.version.label.next.plus.describe.distance",
-        by(
-            () ->
-                inc(
-                    placeholderMap.get("describe.tag.version.label.next").get(),
-                    descriptionDistance.get())));
+        by(() -> inc(lookup.get("describe.tag.version.label.next"), descriptionDistance.get())));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.maven.core",
         by(
             () -> {
-              String snapshot = placeholderMap.get("describe.snapshot").get();
+              String snapshot = lookup.get("describe.snapshot");
               ArrayDeque<String> elements =
                   Stream.of(
                           "describe.tag.version.major",
                           "describe.tag.version.minor",
                           "describe.tag.version.patch")
-                      .<Supplier<@Nullable String>>map(placeholderMap::get)
-                      .map(Supplier::get)
+                      .map(lookup::get)
                       .filter(StringUtil::isNotBlank)
                       .collect(Collectors.toCollection(ArrayDeque::new));
               if (StringUtil.isNotEmpty(snapshot)) {
@@ -368,20 +328,17 @@ final class VersionPlaceholders {
               return String.join(".", elements);
             }));
 
-    placeholderMap.put(
+    lookup.put(
         "describe.tag.version.maven",
-        by(
-            () ->
-                placeholderMap.get("describe.tag.version.maven.core").get()
-                    + placeholderMap.get("describe.snapshot").get()));
+        by(() -> lookup.get("describe.tag.version.maven.core") + lookup.get("describe.snapshot")));
 
     // describe tag pattern groups
     Memoized<Map<String, @Nullable String>> tagPatternValues =
-        by(() -> patternGroupValues(gitSituation.getTagPattern(), descriptionTag.get()));
-    for (String groupName : patternGroups(gitSituation.getTagPattern())) {
+        by(() -> patternGroupValues(situation.getTagPattern(), descriptionTag.get()));
+    for (String groupName : patternGroups(situation.getTagPattern())) {
       var placeholderKey = "describe.tag." + groupName;
       // ensure no placeholder overwrites
-      if (placeholderMap.containsKey(placeholderKey)) {
+      if (lookup.containsKey(placeholderKey)) {
         throw new IllegalArgumentException(
             "describe tag pattern capture group can not be named '"
                 + groupName
@@ -390,25 +347,56 @@ final class VersionPlaceholders {
                 + "}");
       }
       Memoized<String> groupValue = by(() -> nonNullOrEmpty(tagPatternValues.get().get(groupName)));
-      placeholderMap.put(placeholderKey, groupValue);
-      placeholderMap.put(placeholderKey + ".slug", by(() -> VersionUtil.slugify(groupValue.get())));
+      lookup.put(placeholderKey, groupValue);
+      lookup.put(placeholderKey + ".slug", by(() -> VersionUtil.slugify(groupValue.get())));
     }
 
     // command parameters e.g. mvn -Dfoo=123 will be available as ${property.foo}
-    for (Entry<Object, @Nullable Object> property : mavenSession.getUserProperties().entrySet()) {
+    for (Entry<Object, @Nullable Object> property : session.getUserProperties().entrySet()) {
       if (property.getValue() != null) {
-        placeholderMap.put(
-            "property." + property.getKey(), () -> String.valueOf(property.getValue()));
+        lookup.put("property." + property.getKey(), () -> String.valueOf(property.getValue()));
       }
     }
 
     // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-    System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
+    System.getenv().forEach((key, value) -> lookup.put("env." + key, () -> value));
 
-    return placeholderMap;
+    return lookup.map();
   }
 
   private static <T> Memoized<T> by(Supplier<T> supplier) {
     return Memoized.by(supplier);
+  }
+
+  record LookupWrapper(Map<String, Supplier<String>> map) {
+    public LookupWrapper() {
+      this(new HashMap<>());
+    }
+
+    public String get(String key) {
+      return map.getOrDefault(key, () -> "").get();
+    }
+
+    public void put(String key, Supplier<String> supplier) {
+      map.put(key, supplier);
+    }
+
+    public boolean containsKey(String key) {
+      return map.containsKey(key);
+    }
+
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    public LookupWrapper clone() {
+      return new LookupWrapper(new HashMap<>(map));
+    }
+
+    public static String toString(int num) {
+      return String.valueOf(num);
+    }
+
+    public static String toString(long num) {
+      return String.valueOf(num);
+    }
   }
 }

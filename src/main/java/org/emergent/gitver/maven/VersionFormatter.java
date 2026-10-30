@@ -1,6 +1,5 @@
 package org.emergent.gitver.maven;
 
-import static org.emergent.gitver.util.StringUtil.nonNullOrEmpty;
 import static org.emergent.gitver.util.StringUtil.substituteText;
 
 import java.util.HashMap;
@@ -44,8 +43,7 @@ final class VersionFormatter {
   }
 
   private Map<String, Supplier<String>> placeholders(String projectVersion) {
-    Map<String, Supplier<String>> map = nonNullOrEmpty(new HashMap<>(globalPlaceholders));
-    VersionPlaceholders.addLocal(map, projectVersionPattern, projectVersion);
-    return map;
+    Map<String, Supplier<String>> map = new HashMap<>(globalPlaceholders);
+    return VersionPlaceholders.addLocal(map, projectVersionPattern, projectVersion);
   }
 }

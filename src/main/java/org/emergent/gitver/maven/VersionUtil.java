@@ -34,6 +34,10 @@ final class VersionUtil {
     return matcher;
   }
 
+  static String inc(String number) {
+    return inc(number, 1);
+  }
+
   static String inc(String number, long increment) {
     String sanitized = number.isEmpty() ? "0" : number;
     return String.format("%01d", Long.parseLong(sanitized) + increment);
