@@ -28,7 +28,7 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.jspecify.annotations.Nullable;
 
 @Slf4j
-public final class MavenUtil {
+final class MavenUtil {
 
   private static final Supplier<Properties> buildProperties =
       memoize(
@@ -44,7 +44,7 @@ public final class MavenUtil {
           });
 
   static Model readModel(File pomFile) throws IOException {
-    try (FileReader fileReader = new FileReader(pomFile)) {
+    try (FileReader fileReader = new FileReader(pomFile, StandardCharsets.UTF_8)) {
       Model model = new MavenXpp3Reader().read(fileReader);
       model.setPomFile(pomFile);
       return model;
@@ -64,7 +64,7 @@ public final class MavenUtil {
   }
 
   static void writeModel(File pomFile, Model model) throws IOException {
-    try (FileWriter fileWriter = new FileWriter(pomFile)) {
+    try (FileWriter fileWriter = new FileWriter(pomFile, StandardCharsets.UTF_8)) {
       new MavenXpp3Writer().write(fileWriter, model);
     }
   }
@@ -79,7 +79,7 @@ public final class MavenUtil {
 
   public static void writeXml(File file, Document gitVersionedPom) throws IOException {
     String xml = gitVersionedPom.toXML();
-    byte[] gitVersionedPomBytes = xml.getBytes();
+    byte[] gitVersionedPomBytes = xml.getBytes(StandardCharsets.UTF_8);
     if (file.exists()) {
       byte[] existingPomBytes = readAllBytes(file.toPath());
       if (Arrays.equals(gitVersionedPomBytes, existingPomBytes)) {
@@ -92,14 +92,14 @@ public final class MavenUtil {
   }
 
   public static Document readXml(File file) throws IOException {
-    String pomXml = new String(readAllBytes(file.toPath()));
+    String pomXml = new String(readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     XMLParser parser = new XMLParser();
     return parser.parse(new XMLStringSource(pomXml));
   }
 
   public static @Nullable BuildBase getBuild(ModelBase model) {
-    if (model instanceof Profile) {
-      return ((Profile) model).getBuild();
+    if (model instanceof Profile profile) {
+      return profile.getBuild();
     }
     return ((Model) model).getBuild();
   }
@@ -109,8 +109,14 @@ public final class MavenUtil {
   }
 
   public static Coords gitverCoords() {
+    // Package pkg = MavenUtil.class.getPackage();
+    // String implVersion = pkg.getImplementationVersion();
+    // String version = StringUtil.isNotBlank(implVersion) ? implVersion : "unknown";
     Properties props = buildProperties.get();
     return Coords.builder()
+        // .setGroupId(Constants.MAVEN_GROUP_ID)
+        // .setArtifactId(Constants.MAVEN_ARTIFACT_ID)
+        // .setVersion(version)
         .setGroupId(props.getProperty("project.groupId"))
         .setArtifactId(props.getProperty("project.artifactId"))
         .setVersion(props.getProperty("project.version"))

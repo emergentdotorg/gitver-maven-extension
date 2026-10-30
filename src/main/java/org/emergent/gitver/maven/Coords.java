@@ -1,5 +1,7 @@
 package org.emergent.gitver.maven;
 
+import static org.emergent.gitver.maven.StringUtil.nonNullOrEmpty;
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,6 +54,10 @@ public class Coords implements Comparable<Coords> {
         .collect(Collectors.joining(":"));
   }
 
+  public static Coords of(@Nullable String groupId, @Nullable String artifactId) {
+    return Coords.builder().setGroupId(groupId).setArtifactId(artifactId).build();
+  }
+
   public static Coords of(
       @Nullable String groupId, @Nullable String artifactId, @Nullable String version) {
     return Coords.builder()
@@ -101,7 +107,7 @@ public class Coords implements Comparable<Coords> {
     return COMPARATOR.compare(this, o);
   }
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings({"unused", "NullAway.Init"})
   public static class Builder {
 
     public Builder setGroupId(@Nullable String groupId) {
@@ -125,10 +131,6 @@ public class Coords implements Comparable<Coords> {
     @Override
     public String toString() {
       return build().toString();
-    }
-
-    private static String nonNullOrEmpty(@Nullable String groupId) {
-      return Objects.requireNonNullElse(groupId, "");
     }
   }
 }

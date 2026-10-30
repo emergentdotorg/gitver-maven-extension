@@ -40,6 +40,15 @@ public class Throwing {
     return ThrowingFunction.unchecked(function);
   }
 
+  public static <T, E extends Exception> Supplier<T> sneaky(ThrowingSupplier<T, E> supplier) {
+    return ThrowingSupplier.sneaky(supplier);
+  }
+
+  public static <T, R, E extends Exception> Function<T, R> sneaky(
+      ThrowingFunction<T, R, E> function) {
+    return ThrowingFunction.sneaky(function);
+  }
+
   public static <T, R, E extends Exception> Function<T, Optional<R>> maybe(
       ThrowingFunction<T, R, E> function) {
     return t -> {

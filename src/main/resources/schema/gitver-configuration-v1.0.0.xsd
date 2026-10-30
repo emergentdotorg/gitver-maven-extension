@@ -31,24 +31,12 @@
           <xs:element name="projectVersionPattern" type="xs:string" minOccurs="0"/>
 
           <xs:element name="refs" minOccurs="0">
-            <xs:annotation>
-              <xs:documentation xml:lang="en">
-                A sequential set of processing options that are attempted to match against in order.
-              </xs:documentation>
-            </xs:annotation>
             <xs:complexType>
               <xs:sequence>
                 <xs:element name="ref" type="RefDetail" minOccurs="0" maxOccurs="unbounded"/>
               </xs:sequence>
+              <xs:attribute name="appendDefaults" type="xs:boolean" default="false"/>
             </xs:complexType>
-          </xs:element>
-
-          <xs:element name="rev" type="RevDetail" minOccurs="0">
-            <xs:annotation>
-              <xs:documentation xml:lang="en">
-                The fallback processing options when no ref is matched.
-              </xs:documentation>
-            </xs:annotation>
           </xs:element>
 
           <xs:element name="relatedProjects" minOccurs="0">
@@ -64,34 +52,6 @@
     </xs:complexContent>
   </xs:complexType>
 
-  <xs:complexType name="RevDetail">
-    <xs:annotation>
-      <xs:documentation xml:lang="en">
-        Git status description with information on how to process a git state.
-      </xs:documentation>
-    </xs:annotation>
-    <xs:complexContent mixed="false">
-      <xs:extension base="Options">
-        <xs:all>
-          <xs:element name="properties" minOccurs="0">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
-              </xs:sequence>
-            </xs:complexType>
-          </xs:element>
-          <xs:element name="userProperties" minOccurs="0">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
-              </xs:sequence>
-            </xs:complexType>
-          </xs:element>
-        </xs:all>
-      </xs:extension>
-    </xs:complexContent>
-  </xs:complexType>
-
   <xs:complexType name="RefDetail">
     <xs:annotation>
       <xs:documentation xml:lang="en">
@@ -100,13 +60,9 @@
       </xs:documentation>
     </xs:annotation>
     <xs:complexContent mixed="false">
-      <xs:extension base="RevDetail">
+      <xs:extension base="Options">
         <xs:all>
-          <xs:element name="pattern" type="xs:string" minOccurs="0">
-            <xs:annotation>
-              <xs:documentation xml:lang="en">The ref name matching regex.</xs:documentation>
-            </xs:annotation>
-          </xs:element>
+
           <xs:element name="type">
             <xs:annotation>
               <xs:documentation xml:lang="en">The ref type to match.</xs:documentation>
@@ -114,10 +70,34 @@
             <xs:simpleType>
               <xs:restriction base="xs:string">
                 <xs:enumeration value="branch"/>
+                <xs:enumeration value="commit"/>
                 <xs:enumeration value="tag"/>
               </xs:restriction>
             </xs:simpleType>
           </xs:element>
+
+          <xs:element name="pattern" type="xs:string" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation xml:lang="en">The ref name matching regex.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+
+          <xs:element name="properties" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="userProperties" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+
         </xs:all>
       </xs:extension>
     </xs:complexContent>

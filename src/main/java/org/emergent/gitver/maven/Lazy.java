@@ -29,7 +29,7 @@ public class Lazy<T> implements Supplier<T>, Serializable {
   }
 
   public static <T> Lazy<T> by(@NonNull ThrowingSupplier<T, Exception> delegate) {
-    return wrap(delegate.uncheck());
+    return wrap(Throwing.sneaky(delegate));
   }
 
   public static <T> Lazy<T> wrap(Supplier<T> delegate) {

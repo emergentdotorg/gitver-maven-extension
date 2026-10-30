@@ -1,28 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.emergent.gitver</groupId>
   <artifactId>gitver-maven-extension</artifactId>
   <version>${revision}</version>
+  <packaging>maven-plugin</packaging>
 
-  <name>Gitver Maven Extension</name>
-  <description>Extension for versioning Maven projects using the Git history</description>
+  <name>Maven Git Versioning Extension</name>
+  <description>Maven Git Versioning Extension</description>
+
+  <prerequisites>
+    <maven>3.6.4</maven>
+  </prerequisites>
 
   <properties>
-    <maven.compiler.proc>full</maven.compiler.proc>
     <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+    <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
+    <maven.version.rules>file://${project.basedir}/version-rules.xml</maven.version.rules>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <revision>0.1.1-SNAPSHOT</revision>
-    <version.maven>3.9.9</version.maven>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <requiredMavenVersion>3.6.4</requiredMavenVersion>
+    <revision>0.2.0</revision>
+    <version.build-helper-maven-plugin>3.6.1</version.build-helper-maven-plugin>
+    <version.central-publishing-maven-plugin>0.12.0</version.central-publishing-maven-plugin>
+    <version.errorprone>2.42.0</version.errorprone>
+    <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
+    <version.jacoco-maven-plugin>0.8.16</version.jacoco-maven-plugin>
+    <version.license-maven-plugin>2.7.1</version.license-maven-plugin>
+    <version.lombok>1.18.48</version.lombok>
+    <version.maven-compiler-plugin>3.16.0</version.maven-compiler-plugin>
+    <version.maven-dependency-plugin>3.11.0</version.maven-dependency-plugin>
+    <version.maven-deploy-plugin>3.2.0</version.maven-deploy-plugin>
+    <version.maven-enforcer-plugin>3.6.3</version.maven-enforcer-plugin>
+    <version.maven-gpg-plugin>3.2.8</version.maven-gpg-plugin>
+    <version.maven-help-plugin>3.5.1</version.maven-help-plugin>
+    <version.maven-invoker-plugin>3.10.1</version.maven-invoker-plugin>
+    <version.maven-jar-plugin>3.5.1</version.maven-jar-plugin>
+    <version.maven-javadoc-plugin>3.12.0</version.maven-javadoc-plugin>
+    <version.maven-plugin-plugin>3.16.0</version.maven-plugin-plugin>
     <version.maven-plugin-tools>3.16.0</version.maven-plugin-tools>
+    <version.maven-release-plugin>3.3.1</version.maven-release-plugin>
+    <version.maven-resources-plugin>3.5.0</version.maven-resources-plugin>
+    <version.maven-source-plugin>3.4.0</version.maven-source-plugin>
+    <version.maven-surefire-plugin>3.6.1</version.maven-surefire-plugin>
+    <version.mrm-maven-plugin>2.0.0</version.mrm-maven-plugin>
+    <version.nullaway>0.14.3</version.nullaway>
+    <version.sisu-maven-plugin>1.1.1</version.sisu-maven-plugin>
     <version.slf4j>1.7.36</version.slf4j>
+    <version.versions-maven-plugin>2.23.0</version.versions-maven-plugin>
   </properties>
 
-  <url>https://github.com/emergentdotorg/gitver-maven-extension</url>
+  <url>https://github.com/emergentdotorg/gitver</url>
   <inceptionYear>2025</inceptionYear>
 
   <organization>
@@ -32,7 +66,7 @@
 
   <licenses>
     <license>
-      <name>The MIT License</name>
+      <name>The MIT License (MIT)</name>
       <url>https://opensource.org/licenses/MIT</url>
       <distribution>repo</distribution>
     </license>
@@ -47,59 +81,165 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/emergentdotorg/gitver-maven-extension.git</connection>
-    <developerConnection>scm:ssh:git@github.com:emergentdotorg/gitver-maven-extension.git</developerConnection>
+    <connection>scm:git:https://github.com/emergentdotorg/gitver</connection>
+    <developerConnection>scm:ssh:git@github.com:emergentdotorg/gitver</developerConnection>
     <tag>HEAD</tag>
-    <url>https://github.com/emergentdotorg/gitver-maven-extension</url>
+    <url>https://github.com/emergentdotorg/gitver</url>
   </scm>
 
   <issueManagement>
     <system>github.com</system>
-    <url>https://github.com/emergentdotorg/gitver-maven-extension/issues</url>
+    <url>https://github.com/emergentdotorg/gitver/issues</url>
   </issueManagement>
 
   <build>
+    <resources>
+      <resource>
+        <filtering>true</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/gitver.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <filtering>false</filtering>
+        <directory>src/main/resources</directory>
+        <excludes>
+          <exclude>**/gitver.properties</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <pluginManagement>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.16.0</version>
+          <version>${version.maven-compiler-plugin}</version>
+          <configuration>
+            <release>${maven.compiler.release}</release>
+            <showDeprecation>true</showDeprecation>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+              </path>
+              <path>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_core</artifactId>
+                <version>${version.errorprone}</version>
+              </path>
+              <path>
+                <groupId>com.uber.nullaway</groupId>
+                <artifactId>nullaway</artifactId>
+                <version>${version.nullaway}</version>
+              </path>
+            </annotationProcessorPaths>
+            <compilerArgs>
+              <arg>-Xlint:unchecked</arg>
+              <arg>-XDcompilePolicy=simple</arg>
+              <arg>--should-stop=ifError=FLOW</arg>
+              <arg>-Xplugin:ErrorProne
+                -XepDisableWarningsInGeneratedCode
+                -Xep:EffectivelyPrivate:OFF
+                -Xep:EmptyCatch:OFF
+                -Xep:MissingSummary:OFF
+                -Xep:NullAway:ERROR
+                -XepOpt:NullAway:OnlyNullMarked=true
+                -XepOpt:NullAway:TreatGeneratedAsUnannotated=true</arg>
+            </compilerArgs>
+          </configuration>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.11.0</version>
+          <version>${version.maven-dependency-plugin}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${version.maven-deploy-plugin}</version>
+          <configuration>
+            <deployAtEnd>true</deployAtEnd>
+          </configuration>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.6.3</version>
+          <version>${version.maven-enforcer-plugin}</version>
+          <executions>
+            <execution>
+              <id>enforce-requireMavenVersion</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>${requiredMavenVersion}</version>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+            <execution>
+              <id>enforce-requireUpperBoundDeps</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireUpperBoundDeps />
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
-          <version>3.2.8</version>
+          <version>${version.maven-gpg-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-invoker-plugin</artifactId>
-          <version>3.10.1</version>
+          <version>${version.maven-invoker-plugin}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${version.maven-jar-plugin}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.12.0</version>
+          <version>${version.maven-javadoc-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.16.0</version>
+          <version>${version.maven-plugin-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>${version.maven-resources-plugin}</version>
           <configuration>
             <delimiters>
               <delimiter>@</delimiter>
@@ -107,52 +247,138 @@
             <useDefaultDelimiters>false</useDefaultDelimiters>
             <propertiesEncoding>ISO-8859-1</propertiesEncoding>
           </configuration>
+          <executions>
+            <execution>
+              <id>copy-license</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>${maven.multiModuleProjectDirectory}</directory>
+                    <includes>
+                      <include>LICENSE</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.4.0</version>
+          <version>${version.maven-source-plugin}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
           <executions>
             <execution>
               <id>attach-sources</id>
               <goals>
                 <goal>jar-no-fork</goal>
               </goals>
-              <configuration>
-                <archive>
-                  <manifest>
-                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                  </manifest>
-                </archive>
-              </configuration>
             </execution>
           </executions>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${version.maven-surefire-plugin}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.6.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.8.0</version>
+        </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>license-maven-plugin</artifactId>
-          <version>2.7.1</version>
+          <version>${version.license-maven-plugin}</version>
+          <configuration>
+            <licenseName>mit</licenseName>
+            <licenseFile>LICENSE</licenseFile>
+            <generateBundle>true</generateBundle>
+            <keepBackup>false</keepBackup>
+          </configuration>
         </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>mrm-maven-plugin</artifactId>
-          <version>2.0.0</version>
+          <version>${version.mrm-maven-plugin}</version>
         </plugin>
+
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
-          <version>2.23.0</version>
+          <version>${version.versions-maven-plugin}</version>
+          <inherited>false</inherited>
+          <configuration>
+            <dependencyExcludes>
+              <exclude>*:*:*:*:*:provided</exclude>
+            </dependencyExcludes>
+            <generateBackupPoms>false</generateBackupPoms>
+          </configuration>
         </plugin>
+
         <plugin>
-          <groupId>org.eclipse.sisu</groupId>
-          <artifactId>sisu-maven-plugin</artifactId>
-          <version>1.1.1</version>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${version.jacoco-maven-plugin}</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>prepare-package</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
+
+        <plugin>
+          <groupId>org.projectlombok</groupId>
+          <artifactId>lombok-maven-plugin</artifactId>
+          <version>1.18.20.0</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${version.lombok}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
         <plugin>
           <groupId>org.sonatype.central</groupId>
           <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>0.12.0</version>
+          <version>${version.central-publishing-maven-plugin}</version>
+          <extensions>true</extensions>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -160,22 +386,31 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
+        <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <id>enforce-maven</id>
+            <id>analyze</id>
             <goals>
-              <goal>enforce</goal>
+              <goal>analyze-only</goal>
             </goals>
             <configuration>
-              <rules>
-                <requireMavenVersion>
-                  <version>3.6.4</version>
-                </requireMavenVersion>
-              </rules>
+              <failOnWarning>true</failOnWarning>
+              <ignoreNonCompile>true</ignoreNonCompile>
+              <outputXML>true</outputXML>
             </configuration>
           </execution>
+          <execution>
+            <id>properties</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
 
       <plugin>
@@ -187,13 +422,51 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+          <branch>devel</branch>
+          <scmBranch>devel</scmBranch>
+          <providerImplementations>
+            <git>jgit</git>
+          </providerImplementations>
+          <goals>install</goals>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-provider-jgit</artifactId>
+            <version>2.2.1</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.eclipse.sisu</groupId>
         <artifactId>sisu-maven-plugin</artifactId>
+        <version>${version.sisu-maven-plugin}</version>
         <executions>
           <execution>
-            <id>generate-index</id>
+            <id>index-project</id>
             <goals>
               <goal>main-index</goal>
+              <goal>test-index</goal>
             </goals>
           </execution>
         </executions>
@@ -213,7 +486,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.13.3</version>
+        <version>5.14.4</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -241,12 +514,24 @@
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
-      <version>7.7.1.202607240634-r</version>
+      <version>7.8.0.202609011348-r</version>
     </dependency>
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>
       <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>33.4.8-jre</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>5.1.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
@@ -257,37 +542,37 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-builder-support</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model-builder</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>${version.maven}</version>
+      <version>3.9.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -303,16 +588,34 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>3.5.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-xml</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.48</version>
+      <version>${version.lombok}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.36</version>
+      <version>${version.slf4j}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-verifier</artifactId>
+      <version>2.0.0-M1</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
@@ -339,6 +642,12 @@
       <artifactId>mockito-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${version.slf4j}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <profiles>
@@ -359,30 +668,32 @@
                 </goals>
                 <configuration>
                   <goals>
+                    <goal>-B</goal>
                     <goal>-ntp</goal>
-                    <goal>-Drevision=0.0.1-SNAPSHOT</goal>
                     <goal>install</goal>
                   </goals>
                   <pomIncludes>
-                    <pomInclude>standardProject/pom.xml</pomInclude>
+                    <pomInclude>*/pom.xml</pomInclude>
                   </pomIncludes>
                   <scope>runtime</scope>
-                  <cloneClean>true</cloneClean>
                   <showErrors>true</showErrors>
                   <timeoutInSeconds>60</timeoutInSeconds>
                   <addTestClassPath>true</addTestClassPath>
                   <preBuildHookScript>setup</preBuildHookScript>
                   <postBuildHookScript>verify</postBuildHookScript>
                   <streamLogsOnFailures>true</streamLogsOnFailures>
-                  <settingsFile>src/it/mrm/settings.xml</settingsFile>
+                  <settingsFile>src/it/home/settings-mrm.xml</settingsFile>
+                  <cloneClean>true</cloneClean>
+                  <cloneAllFiles>true</cloneAllFiles>
                   <cloneProjectsTo>${project.build.directory}/its</cloneProjectsTo>
                   <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
                   <environmentVariables>
-                    <HOME>${project.build.directory}/its/tools</HOME>
+                    <HOME>${project.build.directory}/its/home</HOME>
                     <GIT_CEILING_DIRECTORIES>${project.build.directory}</GIT_CEILING_DIRECTORIES>
+                    <GIT_CONFIG_GLOBAL>/dev/null</GIT_CONFIG_GLOBAL>
                   </environmentVariables>
                   <properties>
-                    <user.home>${project.build.directory}/its/tools</user.home>
+                    <user.home>${project.build.directory}/its/home</user.home>
                   </properties>
                   <extraArtifacts>
                     <artifact>junit:junit:3.8.1</artifact>
@@ -391,7 +702,6 @@
               </execution>
             </executions>
           </plugin>
-
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>mrm-maven-plugin</artifactId>
@@ -409,6 +719,37 @@
                   <goal>start</goal>
                   <goal>stop</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>flatten</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>flatten-maven-plugin</artifactId>
+            <configuration>
+              <updatePomFile>true</updatePomFile>
+              <flattenMode>resolveCiFriendliesOnly</flattenMode>
+            </configuration>
+            <executions>
+              <execution>
+                <id>clean</id>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>flatten</id>
+                <goals>
+                  <goal>flatten</goal>
+                </goals>
+                <phase>process-resources</phase>
               </execution>
             </executions>
           </plugin>
@@ -451,9 +792,36 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
+                  <doclint>none</doclint>
+                  <locale>en</locale>
                   <notimestamp>true</notimestamp>
                   <quiet>true</quiet>
+                  <sourcepath>${project.build.directory}/generated-sources/delombok</sourcepath>
+                  <archive>
+                    <manifest>
+                      <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                      <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                    </manifest>
+                  </archive>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-maven-plugin</artifactId>
+            <configuration>
+              <addOutputDirectory>false</addOutputDirectory>
+              <sourceDirectory>src/main/java</sourceDirectory>
+              <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <id>delombok</id>
+                <goals>
+                  <goal>delombok</goal>
+                </goals>
+                <phase>prepare-package</phase>
               </execution>
             </executions>
           </plugin>
@@ -480,32 +848,5 @@
       </build>
     </profile>
 
-    <profile>
-      <id>purge</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>clean-installed</id>
-                <goals>
-                  <goal>purge-local-repository</goal>
-                </goals>
-                <phase>clean</phase>
-                <configuration>
-                  <actTransitively>true</actTransitively>
-                  <resolutionFuzziness>groupId</resolutionFuzziness>
-                  <manualIncludes>
-                    <include>${project.groupId}:${project.artifactId}</include>
-                  </manualIncludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
 </project>

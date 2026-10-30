@@ -2,33 +2,30 @@
   xmlns="http://emergentdotorg.github.io/gitver/configuration/1.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://emergentdotorg.github.io/gitver/configuration/1.0.0
-                      https://emergentdotorg.github.io/gitver-maven-extension/gitver-configuration-v1.0.0.xsd">
+                      https://emergentdotorg.github.io/gitver-configuration-v1.0.0.xsd">
 
-  <!--<disable>false</disable>-->
-  <!--<version>${describe.version}</version>-->
-  <!--<onlyFollowFirstParent>true</onlyFollowFirstParent>-->
-  <!--<considerTagsOnBranches>false</considerTagsOnBranches>-->
-  <!--<updateAttached>true</updateAttached>-->
-  <!--<updateSource>false</updateSource>-->
+  <disable>false</disable>
+  <updateAttachedPom>true</updateAttachedPom>
+  <updateSourcePom>false</updateSourcePom>
+
+  <followFirstParentOnly>true</followFirstParentOnly>
+  <considerTagsOnBranches>false</considerTagsOnBranches>
 
   <refs>
-
-    <ref>
-      <type>branch</type>
-      <pattern>.+</pattern>
-      <version>${describe.tag.version.next}</version>
-    </ref>
-
     <ref>
       <type>tag</type>
       <pattern><![CDATA[v(?<version>.*)]]></pattern>
       <version>${ref.version}</version>
     </ref>
-
+    <ref>
+      <type>branch</type>
+      <pattern>.+</pattern>
+      <version>${describe.tag.version.maven}</version>
+    </ref>
+    <ref>
+      <type>commit</type>
+      <version>${commit}-SNAPSHOT</version>
+    </ref>
   </refs>
-
-  <rev>
-    <version>${commit}</version>
-  </rev>
 
 </configuration>
