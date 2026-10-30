@@ -27,14 +27,12 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.ReportPlugin;
 import org.apache.maven.model.Reporting;
-import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Serializes an updated maven {@link Model} to a git versioned pom file by patching the values of
  * the original pom's XML, so formatting and comments are preserved.
  */
 @Slf4j
-@NullUnmarked
 final class PomXmlWriter {
 
   private PomXmlWriter() {}
@@ -104,6 +102,9 @@ final class PomXmlWriter {
     for (Element profileEl : profilesEl.getChildren("profile")) {
       String profileId = profileEl.getChild("id").getText().trim();
       Profile profile = profileMap.get(profileId);
+      if (profile == null) {
+        throw new IllegalArgumentException("Unexpected xml profile without model: " + profileId);
+      }
       updatePropertyValues(profileEl, profile);
       updateDependencyVersion(profileEl, profile);
       updatePlugins(profileEl, profile.getBuild(), profile.getReporting());

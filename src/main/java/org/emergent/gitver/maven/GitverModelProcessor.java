@@ -20,7 +20,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.building.ModelProcessor;
 import org.codehaus.plexus.util.StringUtils;
 import org.emergent.gitver.git.GitSituationFactory;
-import org.jspecify.annotations.NullUnmarked;
+import org.emergent.gitver.util.Memoized;
 
 /**
  * Maven entry point. Decides which models to version and orchestrates the three steps, each of
@@ -34,7 +34,6 @@ import org.jspecify.annotations.NullUnmarked;
  * </ol>
  */
 @Slf4j
-@NullUnmarked
 @Singleton
 @Named("core-default")
 public class GitverModelProcessor implements ModelProcessor {
@@ -46,15 +45,14 @@ public class GitverModelProcessor implements ModelProcessor {
   /** Empty when versioning is disabled or not applicable; valid once {@link #initialized}. */
   private Optional<GitverContext> context = Optional.empty();
 
-  private ModelUpdater modelUpdater;
-
   private final Map<File, Model> sessionModelCache = new HashMap<>();
 
-  private ModelProcessor delegate;
+  @Inject private List<ModelProcessor> modelProcessors;
 
-  @Inject
-  void setDelegate(List<ModelProcessor> modelProcessors) {
-    this.delegate =
+  private final Memoized<ModelProcessor> delegate = Memoized.by(this::findDelegate);
+
+  private ModelProcessor findDelegate() {
+    ModelProcessor found =
         modelProcessors.stream()
             // Avoid circular dependency
             .filter(processor -> processor != this)
@@ -62,27 +60,28 @@ public class GitverModelProcessor implements ModelProcessor {
             // There is normally always at least one implementation available:
             // org.apache.maven.model.building.DefaultModelProcessor
             .orElseThrow(() -> new NoSuchElementException("Unable to find default ModelProcessor"));
-    log.debug("Delegated ModelProcessor : {}", this.delegate);
+    log.debug("Delegated ModelProcessor : {}", found);
+    return found;
   }
 
   @Override
   public File locatePom(File projectDirectory) {
-    return delegate.locatePom(projectDirectory);
+    return delegate.get().locatePom(projectDirectory);
   }
 
   @Override
   public Model read(File input, Map<String, ?> options) throws IOException {
-    return processModel(delegate.read(input, options), options);
+    return processModel(delegate.get().read(input, options), options);
   }
 
   @Override
   public Model read(Reader input, Map<String, ?> options) throws IOException {
-    return processModel(delegate.read(input, options), options);
+    return processModel(delegate.get().read(input, options), options);
   }
 
   @Override
   public Model read(InputStream input, Map<String, ?> options) throws IOException {
-    return processModel(delegate.read(input, options), options);
+    return processModel(delegate.get().read(input, options), options);
   }
 
   public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
@@ -102,7 +101,6 @@ public class GitverModelProcessor implements ModelProcessor {
 
     if (!initialized) {
       context = createContext(projectModel);
-      modelUpdater = context.map(GitverContext::modelUpdater).orElse(null);
       initialized = true;
     }
 
@@ -139,7 +137,7 @@ public class GitverModelProcessor implements ModelProcessor {
       log.info(LogHeaders.project(projectCoords));
     }
 
-    modelUpdater.update(projectModel);
+    ctx.modelUpdater().update(projectModel);
 
     // In case another ModelProcessor is used (like for example polyglot extension),
     // we need to work on the POM possibly translated into XML
@@ -151,10 +149,10 @@ public class GitverModelProcessor implements ModelProcessor {
           gitVersionedPomFile.toPath(), locatedPom.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    // git versioned pom can't be set as model pom right away,
-    // because it will break plugins, that trying to update original pom file
-    //   e.g. mvn versions:set -DnewVersion=1.0.0
-    // That's why we need to add a build plugin that sets project pom file to git versioned pom file
+    // git versioned pom can't be set as model pom right away, because it will break plugins, that
+    // trying to update original pom file e.g.
+    //   mvn versions:set -DnewVersion=1.0.0
+    // That's why we need to add a build plugin that sets project pom to the git versioned pom file
     if (ctx.updateAttachedPom()) {
       log.debug("add version build plugin");
       UpdateAttachedMojo.install(projectModel);

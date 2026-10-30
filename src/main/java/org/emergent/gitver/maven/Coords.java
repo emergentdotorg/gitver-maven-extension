@@ -3,7 +3,6 @@ package org.emergent.gitver.maven;
 import static org.emergent.gitver.util.StringUtil.nonNullOrEmpty;
 
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,10 +95,6 @@ public class Coords implements Comparable<Coords> {
 
   public static Coords of(MavenProject project) {
     return of(project.getGroupId(), project.getArtifactId(), project.getVersion());
-  }
-
-  public static boolean equalsIgnoreVersion(Coords g1, Coords g2) {
-    return Objects.equals(g1.sansVersion(), g2.sansVersion());
   }
 
   @Override

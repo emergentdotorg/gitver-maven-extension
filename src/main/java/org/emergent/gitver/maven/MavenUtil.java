@@ -25,7 +25,7 @@ import org.apache.maven.model.Profile;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.emergent.gitver.util.Lazy;
+import org.emergent.gitver.util.Memoized;
 import org.jspecify.annotations.Nullable;
 
 @Slf4j
@@ -106,7 +106,7 @@ final class MavenUtil {
   }
 
   public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-    return Lazy.by(delegate);
+    return Memoized.by(delegate);
   }
 
   public static Coords gitverCoords() {

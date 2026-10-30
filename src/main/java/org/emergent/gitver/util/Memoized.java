@@ -5,38 +5,38 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullUnmarked
-public class NullableMemo<T> implements Supplier<@Nullable T>, Serializable {
+@NullMarked
+public class Memoized<T> implements Supplier<T>, Serializable {
 
   @Serial private static final long serialVersionUID = 0;
 
-  private final Supplier<@Nullable T> delegate;
+  private final Supplier<T> delegate;
   private transient volatile boolean initialized;
 
   // "value" does not need to be volatile; visibility relies on volatile read of "initialized".
   @Nullable private transient T value;
 
-  private NullableMemo(Supplier<@Nullable T> delegate) {
+  private Memoized(Supplier<T> delegate) {
     this.delegate = Objects.requireNonNull(delegate);
   }
 
-  public static <T> NullableMemo<T> of(@Nullable T value) {
+  public static <T> Memoized<T> of(T value) {
     return by(() -> value);
   }
 
-  public static <T> NullableMemo<T> by(Supplier<@Nullable T> delegate) {
-    return (delegate instanceof NullableMemo<T> memo) ? memo : new NullableMemo<>(delegate);
+  public static <T> Memoized<T> by(Supplier<T> delegate) {
+    return (delegate instanceof Memoized<T> memo) ? memo : new Memoized<>(delegate);
   }
 
-  public static <T> NullableMemo<T> byThrowing(ThrowingSupplier<T, Exception> delegate) {
+  public static <T> Memoized<T> byThrowing(ThrowingSupplier<T, Exception> delegate) {
     return by(Throwing.sneaky(delegate));
   }
 
   @Override
-  public @Nullable T get() {
+  public T get() {
     // A 2-field variant of double-checked locking.
     if (!initialized) {
       synchronized (this) {
@@ -48,7 +48,7 @@ public class NullableMemo<T> implements Supplier<@Nullable T>, Serializable {
         }
       }
     }
-    return value;
+    return Objects.requireNonNull(value);
   }
 
   @Override

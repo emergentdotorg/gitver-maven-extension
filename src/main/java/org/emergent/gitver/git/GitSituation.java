@@ -9,7 +9,6 @@ import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_getWorkTree;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_resolveHead;
 
-import com.pivovarit.function.ThrowingSupplier;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -22,28 +21,33 @@ import lombok.Setter;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
-import org.emergent.gitver.util.Lazy;
-import org.jspecify.annotations.NullUnmarked;
+import org.emergent.gitver.util.Memoized;
+import org.emergent.gitver.util.MemoizedNullable;
+import org.jspecify.annotations.Nullable;
 
-@NullUnmarked
 public class GitSituation {
 
   private final Repository repository;
   @Getter private final File rootDirectory;
 
   private final ObjectId head;
-  private final Supplier<ZonedDateTime> timestamp = byThrowing(this::timestamp);
-  private Supplier<String> branch = byThrowing(this::branch);
+  private final Supplier<ZonedDateTime> timestamp = Memoized.byThrowing(this::timestamp);
+  private Supplier<@Nullable String> branch = MemoizedNullable.byThrowing(this::branch);
 
-  private Supplier<List<String>> tags = byThrowing(this::tags);
+  private Supplier<List<String>> tags;
 
-  private final Supplier<Boolean> clean = byThrowing(this::clean);
+  private final Supplier<Boolean> clean;
+
+  {
+    tags = Memoized.byThrowing(this::tags);
+    clean = Memoized.byThrowing(this::clean);
+  }
 
   @Getter private Pattern tagPattern = Pattern.compile(".*");
 
   @Getter @Setter private boolean firstParent = true;
 
-  private Supplier<GitDescription> description = byThrowing(this::describe);
+  private Supplier<GitDescription> description = Memoized.byThrowing(this::describe);
 
   public GitSituation(Repository repository) throws IOException {
     this.repository = repository;
@@ -59,11 +63,11 @@ public class GitSituation {
     return timestamp.get();
   }
 
-  public String getBranch() {
+  public @Nullable String getBranch() {
     return branch.get();
   }
 
-  protected void setBranch(String branch) {
+  protected void setBranch(@Nullable String branch) {
     if (branch != null) {
       if (branch.startsWith("refs/tags/")) {
         throw new IllegalArgumentException("invalid branch ref" + branch);
@@ -98,11 +102,11 @@ public class GitSituation {
 
     Supplier<List<String>> currentTags = this.tags;
     this.tags =
-        by(
+        Memoized.by(
             () -> {
-              List<String> tags = new ArrayList<>(currentTags.get());
-              tags.add(finalTag);
-              return tags;
+              List<String> tags1 = new ArrayList<>(currentTags.get());
+              tags1.add(finalTag);
+              return tags1;
             });
   }
 
@@ -128,7 +132,7 @@ public class GitSituation {
 
   public void setTagPattern(Pattern tagPattern) {
     this.tagPattern = requireNonNull(tagPattern);
-    this.description = byThrowing(this::describe);
+    this.description = Memoized.byThrowing(this::describe);
   }
 
   public GitDescription getDescription() {
@@ -141,7 +145,7 @@ public class GitSituation {
         : ZonedDateTime.ofInstant(EPOCH, UTC);
   }
 
-  private String branch() throws IOException {
+  private @Nullable String branch() throws IOException {
     return GitUtil.branch(repository);
   }
 
@@ -155,13 +159,5 @@ public class GitSituation {
 
   private GitDescription describe() throws IOException {
     return GitUtil.describe(head, tagPattern, repository, firstParent);
-  }
-
-  private static <T> Lazy<T> by(Supplier<T> supplier) {
-    return Lazy.by(supplier);
-  }
-
-  private static <T> Lazy<T> byThrowing(ThrowingSupplier<T, Exception> supplier) {
-    return Lazy.byThrowing(supplier);
   }
 }

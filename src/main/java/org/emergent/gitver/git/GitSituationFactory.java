@@ -11,8 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.maven.CommandOptions;
 import org.emergent.gitver.util.Throwing;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -20,7 +18,6 @@ import org.jspecify.annotations.Nullable;
  * options or by the environment of a supported CI system.
  */
 @Slf4j
-@NullUnmarked
 public class GitSituationFactory {
 
   private final CommandOptions options;
@@ -173,19 +170,19 @@ public class GitSituationFactory {
     }
 
     @Override
-    protected void setBranch(String branch) {
+    protected void setBranch(@Nullable String branch) {
       log.debug("override git branch with {}", branch);
       super.setBranch(branch);
     }
 
     @Override
-    protected void setTags(@NonNull List<String> tags) {
+    protected void setTags(List<String> tags) {
       log.debug("override git tags with single tag {}", tags);
       super.setTags(tags);
     }
 
     @Override
-    protected void addTag(@NonNull String tag) {
+    protected void addTag(String tag) {
       log.debug("add git tag {}", tag);
       super.addTag(tag);
     }

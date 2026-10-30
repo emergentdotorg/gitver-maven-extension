@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.emergent.gitver.git.GitSituation;
 import org.emergent.gitver.maven.Configuration.RefConfig;
-import org.emergent.gitver.util.Lazy;
+import org.emergent.gitver.util.Memoized;
 
 /** Selects the configured ref (tag, branch or commit) that matches a {@link GitSituation}. */
 final class GitVersionDetailsResolver {
@@ -14,7 +14,7 @@ final class GitVersionDetailsResolver {
   private GitVersionDetailsResolver() {}
 
   static Optional<GitVersionDetails> resolve(GitSituation gitSituation, Configuration config) {
-    Lazy<List<String>> sortedTags = Lazy.by(gitSituation::getTags);
+    Memoized<List<String>> sortedTags = Memoized.by(gitSituation::getTags);
     for (RefConfig refConfig : config.getRefs()) {
       switch (refConfig.getType()) {
         case TAG -> {

@@ -4,7 +4,6 @@ import static org.emergent.gitver.util.StringUtil.nonNullOrElse;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jspecify.annotations.NullUnmarked;
 
 /** Pure functions for parsing, incrementing and normalizing version strings. */
 final class VersionUtil {
@@ -20,7 +19,6 @@ final class VersionUtil {
 
   private VersionUtil() {}
 
-  @NullUnmarked
   static String slugify(String value) {
     if (value == null) {
       return "";
@@ -28,7 +26,6 @@ final class VersionUtil {
     return value.replace("/", "-");
   }
 
-  @NullUnmarked
   static Matcher matchVersion(String input) {
     Matcher matcher = VERSION_PATTERN.matcher(input);
     //noinspection ResultOfMethodCallIgnored
@@ -37,13 +34,11 @@ final class VersionUtil {
     return matcher;
   }
 
-  @NullUnmarked
   static String inc(String number, long increment) {
     String sanitized = number.isEmpty() ? "0" : number;
     return String.format("%01d", Long.parseLong(sanitized) + increment);
   }
 
-  @NullUnmarked
   static String nextVersion(Matcher m) {
     String label = m.group("label");
     if (label != null && !label.isEmpty()) {

@@ -5,42 +5,37 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
-public class Lazy<T> implements Supplier<T>, Serializable {
+public class MemoizedNullable<T> implements Supplier<@Nullable T>, Serializable {
 
   @Serial private static final long serialVersionUID = 0;
 
-  private final Supplier<T> delegate;
+  private final Supplier<@Nullable T> delegate;
   private transient volatile boolean initialized;
 
   // "value" does not need to be volatile; visibility relies on volatile read of "initialized".
   @Nullable private transient T value;
 
-  private Lazy(Supplier<T> delegate) {
+  private MemoizedNullable(Supplier<@Nullable T> delegate) {
     this.delegate = Objects.requireNonNull(delegate);
   }
 
-  public static <T> Lazy<T> of(T value) {
+  public static <T> MemoizedNullable<T> of(@Nullable T value) {
     return by(() -> value);
   }
 
-  public static <T> Lazy<T> by(Supplier<T> delegate) {
-    return (delegate instanceof Lazy<T> memo) ? memo : new Lazy<>(delegate);
+  public static <T> MemoizedNullable<T> by(Supplier<@Nullable T> delegate) {
+    return (delegate instanceof MemoizedNullable<T> memo) ? memo : new MemoizedNullable<>(delegate);
   }
 
-  public static <T> NullableMemo<T> byNullable(Supplier<@Nullable T> delegate) {
-    return NullableMemo.by(delegate);
-  }
-
-  public static <T> Lazy<T> byThrowing(ThrowingSupplier<T, Exception> delegate) {
-    return by(Throwing.sneaky(delegate));
+  public static <T> MemoizedNullable<T> byThrowing(
+      ThrowingSupplier<@Nullable T, Exception> delegate) {
+    return by(ThrowingSupplier.sneaky(delegate));
   }
 
   @Override
-  public T get() {
+  public @Nullable T get() {
     // A 2-field variant of double-checked locking.
     if (!initialized) {
       synchronized (this) {
@@ -52,7 +47,7 @@ public class Lazy<T> implements Supplier<T>, Serializable {
         }
       }
     }
-    return Objects.requireNonNull(value);
+    return value;
   }
 
   @Override

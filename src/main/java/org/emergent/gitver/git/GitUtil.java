@@ -34,7 +34,7 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.emergent.gitver.util.Throwing;
 import org.jspecify.annotations.Nullable;
 
-public final class GitUtil {
+final class GitUtil {
 
   public static String NO_COMMIT = "0000000000000000000000000000000000000000";
 

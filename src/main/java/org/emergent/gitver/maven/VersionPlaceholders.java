@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.emergent.gitver.git.GitDescription;
 import org.emergent.gitver.git.GitSituation;
-import org.emergent.gitver.util.Lazy;
+import org.emergent.gitver.util.Memoized;
 import org.emergent.gitver.util.StringUtil;
 import org.jspecify.annotations.Nullable;
 
@@ -42,7 +42,7 @@ final class VersionPlaceholders {
       Map<String, Supplier<String>> placeholderMap,
       @Nullable Pattern projectVersionPattern,
       String projectVersion) {
-    placeholderMap.put("version", Lazy.of(projectVersion));
+    placeholderMap.put("version", Memoized.of(projectVersion));
     // placeholderMap.put("revision", Lazy.of(projectVersion));
 
     Supplier<Matcher> verComps = by(() -> matchVersion(projectVersion));
@@ -111,11 +111,11 @@ final class VersionPlaceholders {
 
     Map<String, Supplier<String>> placeholderMap = new HashMap<>();
 
-    Lazy<String> hash = by(gitSituation::getRev);
+    Memoized<String> hash = by(gitSituation::getRev);
     placeholderMap.put("commit", hash);
     placeholderMap.put("commit.short", by(() -> hash.get().substring(0, 7)));
 
-    Lazy<ZonedDateTime> headCommitDateTime = by(gitSituation::getTimestamp);
+    Memoized<ZonedDateTime> headCommitDateTime = by(gitSituation::getTimestamp);
     placeholderMap.put(
         "commit.timestamp", by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
     placeholderMap.put(
@@ -155,7 +155,7 @@ final class VersionPlaceholders {
                     ? headCommitDateTime.get().format(DateTimeFormatter.ISO_INSTANT)
                     : "0000-01-01T00:00:00Z"));
 
-    Lazy<ZonedDateTime> buildCommitDateTime =
+    Memoized<ZonedDateTime> buildCommitDateTime =
         by(() -> mavenSession.getStart().atZone(ZoneId.systemDefault()));
     placeholderMap.put(
         "build.timestamp", by(() -> String.valueOf(buildCommitDateTime.get().toEpochSecond())));
@@ -197,7 +197,7 @@ final class VersionPlaceholders {
                     : "0000-01-01T00:00:00Z"));
 
     String refName = gitVersionDetails.refName();
-    Lazy<String> refNameSlug = by(() -> VersionUtil.slugify(refName));
+    Memoized<String> refNameSlug = by(() -> VersionUtil.slugify(refName));
     placeholderMap.put("ref", () -> refName);
     placeholderMap.put("ref" + ".slug", refNameSlug);
 
@@ -229,16 +229,16 @@ final class VersionPlaceholders {
             });
 
     // dirty
-    Lazy<Boolean> dirty = by(() -> !gitSituation.isClean());
+    Memoized<Boolean> dirty = by(() -> !gitSituation.isClean());
     placeholderMap.put("dirty", by(() -> dirty.get() ? ".dirty" : ""));
     placeholderMap.put("dirty.snapshot", by(() -> dirty.get() ? "-SNAPSHOT" : ""));
 
     // describe
-    Lazy<GitDescription> description = by(gitSituation::getDescription);
+    Memoized<GitDescription> description = by(gitSituation::getDescription);
     placeholderMap.put("describe", by(() -> description.get().toString()));
-    Lazy<String> descriptionTag = by(() -> description.get().tag());
+    Memoized<String> descriptionTag = by(() -> description.get().tag());
     placeholderMap.put("describe.tag", descriptionTag);
-    Lazy<Integer> descriptionDistance = by(() -> description.get().distance());
+    Memoized<Integer> descriptionDistance = by(() -> description.get().distance());
     placeholderMap.put("describe.distance", by(() -> String.valueOf(descriptionDistance.get())));
     placeholderMap.put(
         "describe.distance.snapshot",
@@ -248,7 +248,7 @@ final class VersionPlaceholders {
         "describe.snapshot",
         by(() -> dirty.get() || descriptionDistance.get() != 0 ? "-SNAPSHOT" : ""));
 
-    Lazy<Matcher> descriptionTagVersionMatcher = by(() -> matchVersion(descriptionTag.get()));
+    Memoized<Matcher> descriptionTagVersionMatcher = by(() -> matchVersion(descriptionTag.get()));
 
     placeholderMap.put(
         "describe.tag.version",
@@ -376,7 +376,7 @@ final class VersionPlaceholders {
                     + placeholderMap.get("describe.snapshot").get()));
 
     // describe tag pattern groups
-    Lazy<Map<String, @Nullable String>> tagPatternValues =
+    Memoized<Map<String, @Nullable String>> tagPatternValues =
         by(() -> patternGroupValues(gitSituation.getTagPattern(), descriptionTag.get()));
     for (String groupName : patternGroups(gitSituation.getTagPattern())) {
       var placeholderKey = "describe.tag." + groupName;
@@ -389,7 +389,7 @@ final class VersionPlaceholders {
                 + placeholderKey
                 + "}");
       }
-      Lazy<String> groupValue = by(() -> nonNullOrEmpty(tagPatternValues.get().get(groupName)));
+      Memoized<String> groupValue = by(() -> nonNullOrEmpty(tagPatternValues.get().get(groupName)));
       placeholderMap.put(placeholderKey, groupValue);
       placeholderMap.put(placeholderKey + ".slug", by(() -> VersionUtil.slugify(groupValue.get())));
     }
@@ -408,7 +408,7 @@ final class VersionPlaceholders {
     return placeholderMap;
   }
 
-  private static <T> Lazy<T> by(Supplier<T> supplier) {
-    return Lazy.by(supplier);
+  private static <T> Memoized<T> by(Supplier<T> supplier) {
+    return Memoized.by(supplier);
   }
 }

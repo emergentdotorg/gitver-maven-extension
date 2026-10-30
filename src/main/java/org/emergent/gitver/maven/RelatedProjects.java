@@ -11,13 +11,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Profile;
-import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The set of projects (parents, modules, configured extras) whose versions are managed together
  * with the current project.
  */
-@NullUnmarked
 final class RelatedProjects {
 
   private final Set<Coords> coords;
@@ -61,7 +60,7 @@ final class RelatedProjects {
     if (projectModel.getParent() != null) {
       Coords parentCoords = Coords.of(projectModel.getParent());
       File parentProjectPomFile = getParentProjectPomFile(projectModel);
-      if (isRelatedPom(parentProjectPomFile)) {
+      if (parentProjectPomFile != null && isRelatedPom(parentProjectPomFile)) {
         Model parentProjectModel = readModel(parentProjectPomFile);
         Coords parentProjectCoords = Coords.of(parentProjectModel);
         if (parentProjectCoords.equals(parentCoords)) {
@@ -89,8 +88,7 @@ final class RelatedProjects {
    * @return true if <code>pomFile</code> is part of current maven and git context
    */
   private boolean isRelatedPom(File pomFile) throws IOException {
-    return pomFile != null
-        && pomFile.exists()
+    return pomFile.exists()
         && pomFile.isFile()
         // only project pom files ends in .xml, pom files from dependencies from repositories ends
         // in .pom
@@ -100,7 +98,8 @@ final class RelatedProjects {
         && pomFile.getCanonicalPath().startsWith(gitRoot.getCanonicalPath() + File.separator);
   }
 
-  private Model searchParentProjectInParentDirectory(Model projectModel) throws IOException {
+  private @Nullable Model searchParentProjectInParentDirectory(Model projectModel)
+      throws IOException {
     // search for parent project by directory hierarchy
     File parentDirectoryPomFile =
         pomFile(projectModel.getProjectDirectory().getParentFile(), "pom.xml");
@@ -116,7 +115,7 @@ final class RelatedProjects {
     return null;
   }
 
-  private static File getParentProjectPomFile(Model projectModel) {
+  private static @Nullable File getParentProjectPomFile(Model projectModel) {
     if (projectModel.getParent() == null) {
       return null;
     }

@@ -10,7 +10,7 @@ import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.emergent.gitver.util.Throwing;
 
-public record GitTagComparator(RevWalk revWalk) implements Comparator<Ref> {
+record GitTagComparator(RevWalk revWalk) implements Comparator<Ref> {
 
   public GitTagComparator(Repository repository) {
     this(new RevWalk(repository));

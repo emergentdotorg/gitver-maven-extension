@@ -13,14 +13,12 @@ import org.apache.maven.model.Model;
 import org.emergent.gitver.git.GitSituation;
 import org.emergent.gitver.git.GitSituationFactory;
 import org.emergent.gitver.maven.Configuration.RefConfig;
-import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Wires the collaborators together: reads configuration, gathers the git situation, picks the
  * matching ref and prepares the version formatter. Returns empty when versioning is not applicable.
  */
 @Slf4j
-@NullUnmarked
 final class GitverContextFactory {
 
   private final GitverSession session;
