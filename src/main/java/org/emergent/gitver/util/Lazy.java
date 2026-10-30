@@ -5,35 +5,38 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullUnmarked
+@NullMarked
 public class Lazy<T> implements Supplier<T>, Serializable {
 
   @Serial private static final long serialVersionUID = 0;
 
-  @NonNull private final Supplier<T> delegate;
+  private final Supplier<T> delegate;
   private transient volatile boolean initialized;
 
   // "value" does not need to be volatile; visibility relies on volatile read of "initialized".
   @Nullable private transient T value;
 
-  private Lazy(@NonNull Supplier<T> delegate) {
+  private Lazy(Supplier<T> delegate) {
     this.delegate = Objects.requireNonNull(delegate);
   }
 
   public static <T> Lazy<T> of(T value) {
-    return wrap(() -> value);
+    return by(() -> value);
   }
 
-  public static <T> Lazy<T> by(@NonNull ThrowingSupplier<T, Exception> delegate) {
-    return wrap(Throwing.sneaky(delegate));
+  public static <T> Lazy<T> by(Supplier<T> delegate) {
+    return (delegate instanceof Lazy<T> memo) ? memo : new Lazy<>(delegate);
   }
 
-  public static <T> Lazy<T> wrap(Supplier<T> delegate) {
-    return (delegate instanceof Lazy<T> memoized) ? memoized : new Lazy<>(delegate);
+  public static <T> NullableMemo<T> byNullable(Supplier<@Nullable T> delegate) {
+    return NullableMemo.by(delegate);
+  }
+
+  public static <T> Lazy<T> byThrowing(ThrowingSupplier<T, Exception> delegate) {
+    return by(Throwing.sneaky(delegate));
   }
 
   @Override
@@ -49,7 +52,7 @@ public class Lazy<T> implements Supplier<T>, Serializable {
         }
       }
     }
-    return value;
+    return Objects.requireNonNull(value);
   }
 
   @Override

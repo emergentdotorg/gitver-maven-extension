@@ -9,6 +9,7 @@ import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_getWorkTree;
 import static org.emergent.gitver.git.GitUtil.worktreesFix_resolveHead;
 
+import com.pivovarit.function.ThrowingSupplier;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -31,18 +32,18 @@ public class GitSituation {
   @Getter private final File rootDirectory;
 
   private final ObjectId head;
-  private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
-  private Supplier<String> branch = Lazy.by(this::branch);
+  private final Supplier<ZonedDateTime> timestamp = byThrowing(this::timestamp);
+  private Supplier<String> branch = byThrowing(this::branch);
 
-  private Supplier<List<String>> tags = Lazy.by(this::tags);
+  private Supplier<List<String>> tags = byThrowing(this::tags);
 
-  private final Supplier<Boolean> clean = Lazy.by(this::clean);
+  private final Supplier<Boolean> clean = byThrowing(this::clean);
 
   @Getter private Pattern tagPattern = Pattern.compile(".*");
 
   @Getter @Setter private boolean firstParent = true;
 
-  private Supplier<GitDescription> description = Lazy.by(this::describe);
+  private Supplier<GitDescription> description = byThrowing(this::describe);
 
   public GitSituation(Repository repository) throws IOException {
     this.repository = repository;
@@ -97,7 +98,7 @@ public class GitSituation {
 
     Supplier<List<String>> currentTags = this.tags;
     this.tags =
-        Lazy.by(
+        by(
             () -> {
               List<String> tags = new ArrayList<>(currentTags.get());
               tags.add(finalTag);
@@ -127,7 +128,7 @@ public class GitSituation {
 
   public void setTagPattern(Pattern tagPattern) {
     this.tagPattern = requireNonNull(tagPattern);
-    this.description = Lazy.by(this::describe);
+    this.description = byThrowing(this::describe);
   }
 
   public GitDescription getDescription() {
@@ -154,5 +155,13 @@ public class GitSituation {
 
   private GitDescription describe() throws IOException {
     return GitUtil.describe(head, tagPattern, repository, firstParent);
+  }
+
+  private static <T> Lazy<T> by(Supplier<T> supplier) {
+    return Lazy.by(supplier);
+  }
+
+  private static <T> Lazy<T> byThrowing(ThrowingSupplier<T, Exception> supplier) {
+    return Lazy.byThrowing(supplier);
   }
 }

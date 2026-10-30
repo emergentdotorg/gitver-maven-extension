@@ -106,7 +106,7 @@ final class MavenUtil {
   }
 
   public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-    return Lazy.wrap(delegate);
+    return Lazy.by(delegate);
   }
 
   public static Coords gitverCoords() {
