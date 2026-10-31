@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -40,18 +39,20 @@ import org.emergent.gitver.util.Throwing;
 @Named("core-default")
 public class GitverModelProcessor implements ModelProcessor {
 
-  @Inject private GitverSessionHolder sessionHolder;
-
-  private boolean initialized = false;
-
-  /** Empty when versioning is disabled or not applicable; valid once {@link #initialized}. */
-  private Optional<GitverContext> context = Optional.empty();
-
-  private final Map<File, Model> sessionModelCache = new HashMap<>();
-
-  @Inject private List<ModelProcessor> modelProcessors;
-
+  private final GitverSessionHolder sessionHolder;
+  private final List<ModelProcessor> modelProcessors;
   private final Memoized<ModelProcessor> delegate = Memoized.by(this::findDelegate);
+
+  /**
+   * This processor is a singleton that can outlive many maven sessions (e.g. under mvnd), so all
+   * per-build state lives in the {@link GitverSessionState} of the running session.
+   */
+  @Inject
+  public GitverModelProcessor(
+      GitverSessionHolder sessionHolder, List<ModelProcessor> modelProcessors) {
+    this.sessionHolder = sessionHolder;
+    this.modelProcessors = modelProcessors;
+  }
 
   private ModelProcessor findDelegate() {
     ModelProcessor found =
@@ -106,11 +107,14 @@ public class GitverModelProcessor implements ModelProcessor {
       return projectModel;
     }
 
-    if (!initialized) {
-      context = createContext(projectModel);
-      initialized = true;
+    GitverSessionState state = sessionHolder.current().orElse(null);
+    if (state == null) {
+      log.debug("skip model - no maven session present - {}", projectModel.getPomFile());
+      return projectModel;
     }
 
+    Optional<GitverContext> context =
+        state.context(() -> createContext(state.session(), projectModel));
     if (context.isEmpty()) {
       return projectModel;
     }
@@ -131,14 +135,13 @@ public class GitverModelProcessor implements ModelProcessor {
 
     File canonicalProjectPomFile = MavenUtil.canonicalFile(projectModel.getPomFile());
 
-    // return cached calculated project model if present
-    Model cachedProjectModel = sessionModelCache.get(canonicalProjectPomFile);
-    if (cachedProjectModel != null) {
-      return cachedProjectModel;
+    // return the model if it has already been versioned in this session
+    Map<File, Model> versionedModels = state.versionedModels();
+    Model versionedModel = versionedModels.get(canonicalProjectPomFile);
+    if (versionedModel != null) {
+      return versionedModel;
     }
-
-    // add current project model to session project models
-    sessionModelCache.put(canonicalProjectPomFile, projectModel);
+    versionedModels.put(canonicalProjectPomFile, projectModel);
 
     if (log.isInfoEnabled()) {
       log.info(LogHeaders.project(projectCoords));
@@ -173,7 +176,7 @@ public class GitverModelProcessor implements ModelProcessor {
     return projectModel;
   }
 
-  private Optional<GitverContext> createContext(Model projectModel) {
+  private Optional<GitverContext> createContext(GitverSession session, Model projectModel) {
     if (log.isInfoEnabled()) {
       log.info("");
       log.info(LogHeaders.extension(MavenUtil.gitverCoords()));
@@ -191,12 +194,6 @@ public class GitverModelProcessor implements ModelProcessor {
       return Optional.empty();
     }
 
-    Optional<GitverSession> session = sessionHolder.getGitverSession();
-    if (session.isEmpty()) {
-      log.warn("skip - no maven session present");
-      return Optional.empty();
-    }
-
-    return new GitverContextFactory(session.get()).create(projectModel, pomFile);
+    return new GitverContextFactory(session).create(projectModel, pomFile);
   }
 }

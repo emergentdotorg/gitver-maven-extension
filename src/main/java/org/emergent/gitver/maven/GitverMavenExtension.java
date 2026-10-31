@@ -15,11 +15,11 @@ public class GitverMavenExtension extends AbstractMavenLifecycleParticipant {
 
   @Override
   public void afterSessionStart(MavenSession mavenSession) {
-    sessionHolder.setGitverSession(GitverSession.from(mavenSession));
+    sessionHolder.start(GitverSession.from(mavenSession));
   }
 
   @Override
   public void afterSessionEnd(MavenSession session) {
-    sessionHolder.clear();
+    sessionHolder.end();
   }
 }
