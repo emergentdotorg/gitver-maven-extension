@@ -30,7 +30,7 @@ class GitVersionDetailsResolverTest {
   void setUp() throws Exception {
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
     git.commit().setMessage("init").setAllowEmpty(true).call();
-    situation = new GitSituation(git.getRepository());
+    situation = GitSituation.find(tempDir.toFile()).orElseThrow();
   }
 
   @Test

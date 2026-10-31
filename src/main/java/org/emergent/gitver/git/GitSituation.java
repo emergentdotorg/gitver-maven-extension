@@ -5,19 +5,16 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
-import static org.emergent.gitver.git.GitUtil.worktreesFix_getWorkTree;
-import static org.emergent.gitver.git.GitUtil.worktreesFix_resolveHead;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.util.Memoized;
 import org.jspecify.annotations.Nullable;
 
@@ -37,9 +34,17 @@ public final class GitSituation {
   private final boolean firstParent;
   private final Supplier<GitDescription> description;
 
+  /**
+   * @return the situation of the repository containing <code>directory</code>, or empty if there is
+   *     none
+   */
+  public static Optional<GitSituation> find(File directory) {
+    return GitUtil.find(directory).map(GitSituation::new);
+  }
+
   /** The situation of the repository's checked out head. */
-  public GitSituation(Repository repository) throws IOException {
-    this(new Head(repository), GitUtil.branch(repository), null, Pattern.compile(".*"), true);
+  GitSituation(GitUtil git) {
+    this(new Head(git), git.branch(), null, Pattern.compile(".*"), true);
   }
 
   private GitSituation(
@@ -54,14 +59,8 @@ public final class GitSituation {
     this.tagPattern = tagPattern;
     this.firstParent = firstParent;
     this.description =
-        Memoized.byThrowing(
-            () ->
-                GitUtil.describe(
-                    head.commit,
-                    tagPattern,
-                    head.repository,
-                    firstParent,
-                    head.tagsByCommit.get()));
+        Memoized.by(
+            () -> head.git.describe(head.commit, tagPattern, firstParent, head.tagsByCommit.get()));
   }
 
   public File getRootDirectory() {
@@ -158,7 +157,7 @@ public final class GitSituation {
 
   /** What is read from the repository, shared by all situations derived from it. */
   private static final class Head {
-    private final Repository repository;
+    private final GitUtil git;
     private final File rootDirectory;
     private final @Nullable ObjectId commit;
     private final Supplier<ZonedDateTime> timestamp;
@@ -166,19 +165,16 @@ public final class GitSituation {
     private final Supplier<Map<ObjectId, List<String>>> tagsByCommit;
     private final Supplier<List<String>> tags;
 
-    Head(Repository repository) throws IOException {
-      ObjectId commit = worktreesFix_resolveHead(repository);
-      this.repository = repository;
-      this.rootDirectory = worktreesFix_getWorkTree(repository);
+    Head(GitUtil git) {
+      ObjectId commit = git.head();
+      this.git = git;
+      this.rootDirectory = git.workTree();
       this.commit = commit;
       this.timestamp =
-          Memoized.byThrowing(
-              () ->
-                  commit != null
-                      ? GitUtil.revTimestamp(repository, commit)
-                      : ZonedDateTime.ofInstant(EPOCH, UTC));
-      this.clean = Memoized.byThrowing(() -> GitUtil.status(repository).isClean());
-      this.tagsByCommit = Memoized.byThrowing(() -> GitUtil.reverseTagRefMap(repository));
+          Memoized.by(
+              () -> commit != null ? git.commitTime(commit) : ZonedDateTime.ofInstant(EPOCH, UTC));
+      this.clean = Memoized.by(git::isClean);
+      this.tagsByCommit = Memoized.by(git::tagsByCommit);
       this.tags =
           Memoized.by(
               () ->

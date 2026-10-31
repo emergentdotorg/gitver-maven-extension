@@ -1,11 +1,12 @@
 package org.emergent.gitver.maven;
 
 import static java.util.stream.Collectors.toSet;
+import static org.emergent.gitver.maven.MavenUtil.canonicalFile;
 import static org.emergent.gitver.maven.MavenUtil.pomFile;
 import static org.emergent.gitver.maven.MavenUtil.readModel;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -30,8 +31,7 @@ final class RelatedProjects {
   }
 
   static RelatedProjects determine(
-      Model projectModel, Configuration config, File mvnDirectory, File gitRoot)
-      throws IOException {
+      Model projectModel, Configuration config, File mvnDirectory, File gitRoot) {
     Set<Coords> found = new HashSet<>();
     RelatedProjects result = new RelatedProjects(found, mvnDirectory.getParentFile(), gitRoot);
     result.collect(projectModel);
@@ -48,7 +48,7 @@ final class RelatedProjects {
         .anyMatch(coords::contains);
   }
 
-  private void collect(Model projectModel) throws IOException {
+  private void collect(Model projectModel) {
     Coords projectCoords = Coords.of(projectModel);
     if (coords.contains(projectCoords)) {
       return;
@@ -87,19 +87,20 @@ final class RelatedProjects {
    * @param pomFile the pom file
    * @return true if <code>pomFile</code> is part of current maven and git context
    */
-  private boolean isRelatedPom(File pomFile) throws IOException {
-    return pomFile.exists()
-        && pomFile.isFile()
+  private boolean isRelatedPom(File pomFile) {
+    if (!pomFile.isFile()
         // only project pom files ends in .xml, pom files from dependencies from repositories ends
         // in .pom
-        && pomFile.getName().endsWith(".xml")
-        && pomFile.getCanonicalPath().startsWith(mvnProjectRoot.getCanonicalPath() + File.separator)
+        || !pomFile.getName().endsWith(".xml")) {
+      return false;
+    }
+    Path pomPath = canonicalFile(pomFile).toPath();
+    return pomPath.startsWith(canonicalFile(mvnProjectRoot).toPath())
         // only pom files within git directory are treated as project pom files
-        && pomFile.getCanonicalPath().startsWith(gitRoot.getCanonicalPath() + File.separator);
+        && pomPath.startsWith(canonicalFile(gitRoot).toPath());
   }
 
-  private @Nullable Model searchParentProjectInParentDirectory(Model projectModel)
-      throws IOException {
+  private @Nullable Model searchParentProjectInParentDirectory(Model projectModel) {
     // search for parent project by directory hierarchy
     File parentDirectoryPomFile =
         pomFile(projectModel.getProjectDirectory().getParentFile(), "pom.xml");
@@ -107,7 +108,7 @@ final class RelatedProjects {
       // check if parent has module that points to current project directory
       Model parentDirectoryProjectModel = readModel(parentDirectoryPomFile);
       for (File modulePomFile : getProjectModules(parentDirectoryProjectModel)) {
-        if (modulePomFile.getCanonicalFile().equals(projectModel.getPomFile().getCanonicalFile())) {
+        if (canonicalFile(modulePomFile).equals(canonicalFile(projectModel.getPomFile()))) {
           return parentDirectoryProjectModel;
         }
       }

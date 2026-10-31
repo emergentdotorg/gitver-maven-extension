@@ -4,8 +4,6 @@ import static org.apache.maven.shared.utils.StringUtils.rightPad;
 import static org.apache.maven.shared.utils.logging.MessageUtils.buffer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +11,7 @@ import org.apache.maven.model.Model;
 import org.emergent.gitver.git.GitSituation;
 import org.emergent.gitver.git.GitSituationFactory;
 import org.emergent.gitver.maven.Configuration.RefConfig;
+import org.emergent.gitver.util.GitverException;
 
 /**
  * Wires the collaborators together: reads configuration, gathers the git situation, picks the
@@ -29,7 +28,7 @@ final class GitverContextFactory {
     this.options = new CommandOptions(session);
   }
 
-  Optional<GitverContext> create(Model projectModel, File pomFile) throws IOException {
+  Optional<GitverContext> create(Model projectModel, File pomFile) {
     log.debug("pom file: {}", pomFile);
     File mvnDirectory = findMvnDirectory(pomFile);
     log.debug(".mvn directory: {}", mvnDirectory);
@@ -94,7 +93,7 @@ final class GitverContextFactory {
         new GitverContext(relatedProjects, modelUpdater, updateSourcePom, updateAttachedPom));
   }
 
-  private Configuration readConfig(File mvnDirectory) throws IOException {
+  private Configuration readConfig(File mvnDirectory) {
     String configFileName = options.get(CommandOptions.CONFIG_FILE_NAME);
     if (configFileName == null) {
       configFileName = Constants.CONFIG_FILE_NAME;
@@ -151,7 +150,7 @@ final class GitverContextFactory {
         .orElse(refConfig.isUpdateSourcePom());
   }
 
-  private static File findMvnDirectory(File pomFile) throws FileNotFoundException {
+  private static File findMvnDirectory(File pomFile) {
     File searchDirectory = pomFile.getParentFile();
     while (searchDirectory != null) {
       File mvnDir = new File(searchDirectory, ".mvn");
@@ -161,7 +160,7 @@ final class GitverContextFactory {
       searchDirectory = searchDirectory.getParentFile();
     }
 
-    throw new FileNotFoundException("Can not find .mvn directory in hierarchy of " + pomFile);
+    throw new GitverException("Can not find .mvn directory in hierarchy of " + pomFile);
   }
 
   private static void logSituation(GitSituation gitSituation) {

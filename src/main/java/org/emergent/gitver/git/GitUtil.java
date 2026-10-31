@@ -2,28 +2,22 @@ package org.emergent.gitver.git;
 
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 import static org.eclipse.jgit.lib.Constants.R_TAGS;
 import static org.eclipse.jgit.lib.Repository.shortenRefName;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.NoWorkTreeException;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.RefDatabase;
@@ -31,219 +25,194 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.emergent.gitver.util.Throwing;
+import org.emergent.gitver.util.GitverException;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * Read access to one git repository.
+ *
+ * <p>Every operation opens the repository and closes it again before returning, so instances hold
+ * no resources and need no closing. Linked worktrees (<code>git worktree add</code>) are resolved
+ * by JGit itself. Failures are thrown as {@link GitverException}.
+ */
 final class GitUtil {
 
   public static final String NO_COMMIT = "0000000000000000000000000000000000000000";
 
-  private GitUtil() {}
+  private final File gitDir;
+  private final File workTree;
 
-  public static Status status(Repository repository) throws GitAPIException {
-    try {
-      return Git.wrap(repository).status().call();
-    } catch (NoWorkTreeException ex) {
-      return worktreesFix_status(repository);
-    }
-  }
-
-  private static Status worktreesFix_status(Repository repository) throws GitAPIException {
-    try {
-      try (Repository worktreeRepository =
-              createBuilder()
-                  .setGitDir(repository.getDirectory())
-                  .setWorkTree(worktreesFix_getWorkTree(repository))
-                  .build();
-          Git worktreeGit = new Git(worktreeRepository)) {
-        return worktreeGit.status().call();
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static @Nullable String branch(Repository repository) throws IOException {
-    String branch = repository.getBranch();
-    if (ObjectId.isId(branch)) {
-      return null;
-    }
-    return branch;
-  }
-
-  public static List<String> tagsPointAt(ObjectId revObjectId, Repository repository)
-      throws IOException {
-    return reverseTagRefMap(repository).getOrDefault(revObjectId, emptyList());
-  }
-
-  public static GitDescription describe(
-      @Nullable ObjectId revObjectId,
-      Pattern tagPattern,
-      Repository repository,
-      boolean firstParent)
-      throws IOException {
-    return describe(revObjectId, tagPattern, repository, firstParent, reverseTagRefMap(repository));
+  private GitUtil(File gitDir, File workTree) {
+    this.gitDir = gitDir;
+    this.workTree = workTree;
   }
 
   /**
-   * @param tagsByCommit the result of {@link #reverseTagRefMap(Repository)}
+   * @return the repository containing <code>directory</code>, or empty if there is none
    */
-  static GitDescription describe(
-      @Nullable ObjectId revObjectId,
+  static Optional<GitUtil> find(File directory) {
+    try {
+      FileRepositoryBuilder builder =
+          new FileRepositoryBuilder().readEnvironment().findGitDir(directory);
+      if (builder.getGitDir() == null) {
+        return Optional.empty();
+      }
+      try (Repository repository = builder.build()) {
+        return Optional.of(new GitUtil(repository.getDirectory(), repository.getWorkTree()));
+      }
+    } catch (IOException e) {
+      throw new GitverException("Failed to open the git repository of " + directory, e);
+    }
+  }
+
+  File workTree() {
+    return workTree;
+  }
+
+  /**
+   * @return the checked out commit, or null in a repository without commits
+   */
+  @Nullable ObjectId head() {
+    return withRepository("resolve HEAD", repository -> repository.resolve(HEAD));
+  }
+
+  /**
+   * @return the checked out branch, or null for a detached head
+   */
+  @Nullable String branch() {
+    String branch = withRepository("read the branch", Repository::getBranch);
+    return ObjectId.isId(branch) ? null : branch;
+  }
+
+  boolean isClean() {
+    return withRepository(
+        "read the status", repository -> Git.wrap(repository).status().call().isClean());
+  }
+
+  ZonedDateTime commitTime(ObjectId commit) {
+    int commitTime =
+        withRepository(
+            "read commit " + commit.getName(),
+            repository -> repository.parseCommit(commit).getCommitTime());
+    return ZonedDateTime.ofInstant(Instant.ofEpochSecond(commitTime), UTC);
+  }
+
+  /**
+   * @return the tags of <code>commit</code>, most relevant first
+   */
+  List<String> tagsPointAt(ObjectId commit) {
+    return tagsByCommit().getOrDefault(commit, emptyList());
+  }
+
+  /**
+   * @return the names of all tags, keyed by the commit they point at, most relevant first
+   * @see GitTagComparator
+   */
+  Map<ObjectId, List<String>> tagsByCommit() {
+    return withRepository("read the tags", GitUtil::tagsByCommit);
+  }
+
+  /**
+   * Describes <code>commit</code> relative to its most recent tag matching <code>tagPattern</code>.
+   */
+  GitDescription describe(@Nullable ObjectId commit, Pattern tagPattern, boolean firstParent) {
+    return describe(commit, tagPattern, firstParent, tagsByCommit());
+  }
+
+  /**
+   * @param tagsByCommit the result of {@link #tagsByCommit()}
+   */
+  GitDescription describe(
+      @Nullable ObjectId commit,
       Pattern tagPattern,
+      boolean firstParent,
+      Map<ObjectId, List<String>> tagsByCommit) {
+    if (commit == null) {
+      return new GitDescription(NO_COMMIT, "root", 0);
+    }
+    return withRepository(
+        "describe " + commit.getName(),
+        repository -> describe(repository, commit, tagPattern, firstParent, tagsByCommit));
+  }
+
+  @Override
+  public String toString() {
+    return "GitUtil(" + gitDir + ")";
+  }
+
+  /** Runs <code>function</code> against the opened repository, wrapping failures. */
+  private <R> R withRepository(String action, RepositoryFunction<R> function) {
+    try (Repository repository =
+        new FileRepositoryBuilder()
+            .readEnvironment()
+            .setGitDir(gitDir)
+            .setWorkTree(workTree)
+            .setMustExist(true)
+            .build()) {
+      return function.apply(repository);
+    } catch (IOException | GitAPIException e) {
+      throw new GitverException("Failed to " + action + " in " + gitDir, e);
+    }
+  }
+
+  @FunctionalInterface
+  private interface RepositoryFunction<R> {
+    R apply(Repository repository) throws IOException, GitAPIException;
+  }
+
+  private static Map<ObjectId, List<String>> tagsByCommit(Repository repository)
+      throws IOException {
+    RefDatabase refDatabase = repository.getRefDatabase();
+    Map<ObjectId, List<Ref>> refsByCommit = new HashMap<>();
+    for (Ref ref : refDatabase.getRefsByPrefix(R_TAGS)) {
+      // annotated tags point at a tag object, which points at the commit
+      Ref peeled = refDatabase.peel(ref);
+      ObjectId peeledObjectId = peeled.getPeeledObjectId();
+      ObjectId commit = peeledObjectId != null ? peeledObjectId : peeled.getObjectId();
+      refsByCommit.computeIfAbsent(commit, key -> new ArrayList<>()).add(ref);
+    }
+
+    Map<ObjectId, List<String>> tagsByCommit = new HashMap<>();
+    try (RevWalk revWalk = new RevWalk(repository)) {
+      GitTagComparator tagComparator = new GitTagComparator(revWalk);
+      refsByCommit.forEach(
+          (commit, refs) ->
+              tagsByCommit.put(
+                  commit,
+                  refs.stream()
+                      .sorted(tagComparator)
+                      .map(ref -> shortenRefName(ref.getName()))
+                      .toList()));
+    }
+    return tagsByCommit;
+  }
+
+  private static GitDescription describe(
       Repository repository,
+      ObjectId commit,
+      Pattern tagPattern,
       boolean firstParent,
       Map<ObjectId, List<String>> tagsByCommit)
       throws IOException {
-    if (revObjectId == null) {
-      return new GitDescription(NO_COMMIT, "root", 0);
-    }
-
-    Repository commonRepository = worktreesFix_getCommonRepository(repository);
-    // Walk back commit ancestors looking for tagged one
-    try (RevWalk walk = new RevWalk(commonRepository)) {
+    int distance = 0;
+    try (RevWalk walk = new RevWalk(repository)) {
       walk.setRetainBody(false);
       walk.setFirstParent(firstParent);
-      walk.markStart(walk.parseCommit(revObjectId));
-      Iterator<RevCommit> walkIterator = walk.iterator();
-      int depth = 0;
-      while (walkIterator.hasNext()) {
-        RevCommit rev = walkIterator.next();
+      walk.markStart(walk.parseCommit(commit));
+      for (RevCommit ancestor : walk) {
         Optional<String> matchingTag =
-            tagsByCommit.getOrDefault(rev, emptyList()).stream()
+            tagsByCommit.getOrDefault(ancestor, emptyList()).stream()
                 .filter(tag -> tagPattern.matcher(tag).matches())
                 .findFirst();
-
         if (matchingTag.isPresent()) {
-          return new GitDescription(revObjectId.getName(), matchingTag.get(), depth);
+          return new GitDescription(commit.getName(), matchingTag.get(), distance);
         }
-        depth++;
+        distance++;
       }
-
-      if (isShallowRepository(repository)) {
-        throw new IllegalStateException("couldn't find matching tag in shallow git repository");
-      }
-
-      return new GitDescription(revObjectId.getName(), "root", depth);
     }
-  }
-
-  public static boolean isShallowRepository(Repository repository) {
-    return new File(repository.getDirectory(), "shallow").isFile();
-  }
-
-  public static List<Ref> tags(Repository repository) throws IOException {
-    Repository commonRepository = worktreesFix_getCommonRepository(repository);
-    return commonRepository.getRefDatabase().getRefsByPrefix(R_TAGS);
-  }
-
-  public static Map<ObjectId, List<String>> reverseTagRefMap(Repository repository)
-      throws IOException {
-    Repository commonRepository = worktreesFix_getCommonRepository(repository);
-    RefDatabase refDatabase = commonRepository.getRefDatabase();
-    try (RevWalk revWalk = new RevWalk(commonRepository)) {
-      GitTagComparator tagComparator = new GitTagComparator(revWalk);
-      return tags(commonRepository).stream()
-          .collect(groupingBy(Throwing.sneaky((Ref ref) -> peeledObjectId(refDatabase, ref))))
-          .entrySet()
-          .stream()
-          .collect(
-              Collectors.toMap(
-                  Entry::getKey,
-                  e ->
-                      e.getValue().stream()
-                          .sorted(tagComparator)
-                          .map(ref -> shortenRefName(ref.getName()))
-                          .toList()));
+    if (new File(repository.getCommonDirectory(), "shallow").isFile()) {
+      throw new GitverException("couldn't find matching tag in shallow git repository");
     }
-  }
-
-  /** The commit a tag points at, looking through annotated tags. */
-  private static ObjectId peeledObjectId(RefDatabase refDatabase, Ref ref) throws IOException {
-    Ref peeled = refDatabase.peel(ref);
-    ObjectId peeledObjectId = peeled.getPeeledObjectId();
-    return peeledObjectId != null ? peeledObjectId : peeled.getObjectId();
-  }
-
-  public static ZonedDateTime revTimestamp(Repository repository, ObjectId rev) throws IOException {
-    Repository commonRepository = worktreesFix_getCommonRepository(repository);
-    Instant commitTime = Instant.ofEpochSecond(commonRepository.parseCommit(rev).getCommitTime());
-    return ZonedDateTime.ofInstant(commitTime, UTC);
-  }
-
-  /**
-   * @see Repository#getWorkTree()
-   */
-  public static File worktreesFix_getWorkTree(Repository repository) throws IOException {
-    try {
-      return repository.getWorkTree();
-    } catch (NoWorkTreeException e) {
-      File gitDirFile = new File(repository.getDirectory(), "gitdir");
-      if (gitDirFile.exists()) {
-        String gitDirPath = Files.readAllLines(gitDirFile.toPath()).get(0);
-        return new File(gitDirPath).getParentFile();
-      }
-      throw e;
-    }
-  }
-
-  /**
-   * @return common repository
-   */
-  public static Repository worktreesFix_getCommonRepository(Repository repository)
-      throws IOException {
-    try {
-      repository.getWorkTree();
-      return repository;
-    } catch (NoWorkTreeException e) {
-      File repodir = repository.getDirectory();
-      File commonDirFile = new File(repodir, "commondir");
-      if (!commonDirFile.exists()) {
-        throw e;
-      }
-      String commonDirPath = Files.readAllLines(commonDirFile.toPath()).get(0);
-      File commonGitDir = new File(repodir, commonDirPath);
-      return createBuilder().setGitDir(commonGitDir).build();
-    }
-  }
-
-  /**
-   * @see Repository#resolve(String)
-   * @see Constants#HEAD
-   */
-  public static @Nullable ObjectId worktreesFix_resolveHead(Repository repository)
-      throws IOException {
-    try {
-      repository.getWorkTree();
-      return repository.resolve(HEAD);
-    } catch (NoWorkTreeException e) {
-      File headFile = new File(repository.getDirectory(), HEAD);
-      if (!headFile.exists()) {
-        throw e;
-      }
-
-      Repository commonRepository = worktreesFix_getCommonRepository(repository);
-      String head = Files.readAllLines(headFile.toPath()).get(0);
-      if (head.startsWith("ref:")) {
-        String refPath = head.replaceFirst("^ref: *", "");
-        ObjectId resolvedRef = commonRepository.resolve(refPath);
-        if (resolvedRef == null) {
-          throw new IOException("Cannot resolve head ref '" + refPath + "'");
-        }
-        return resolvedRef;
-      }
-      return commonRepository.resolve(head);
-    }
-  }
-
-  public static Optional<Repository> getRepository(File baseDirectory) throws IOException {
-    FileRepositoryBuilder builder = createBuilder().findGitDir(baseDirectory);
-    return Optional.of(builder)
-        .filter(b -> b.getGitDir() != null)
-        .map(Throwing.sneaky(FileRepositoryBuilder::build));
-  }
-
-  private static FileRepositoryBuilder createBuilder() {
-    return new FileRepositoryBuilder().readEnvironment();
+    return new GitDescription(commit.getName(), "root", distance);
   }
 }

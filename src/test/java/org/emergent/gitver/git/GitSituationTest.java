@@ -6,7 +6,6 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 import static org.emergent.gitver.git.GitUtil.NO_COMMIT;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -21,12 +20,12 @@ class GitSituationTest {
   @TempDir Path tempDir;
 
   @Test
-  void revParse_emptyRepo() throws GitAPIException, IOException {
+  void revParse_emptyRepo() throws GitAPIException {
 
     // given
-    Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
+    Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // then
     assertThat(situation)
@@ -42,14 +41,14 @@ class GitSituationTest {
   }
 
   @Test
-  void revParse_nonEmptyRepo() throws GitAPIException, IOException {
+  void revParse_nonEmptyRepo() throws GitAPIException {
 
     // given
     Git git = Git.init().setInitialBranch("master").setDirectory(tempDir.toFile()).call();
 
     RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // then
     assertThat(situation)
@@ -65,7 +64,7 @@ class GitSituationTest {
   }
 
   @Test
-  void headSituation_onBranchWithTag() throws GitAPIException, IOException {
+  void headSituation_onBranchWithTag() throws GitAPIException {
 
     // Given
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
@@ -73,7 +72,7 @@ class GitSituationTest {
     String givenTag = "v1";
     git.tag().setName(givenTag).setObjectId(givenCommit).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -89,14 +88,14 @@ class GitSituationTest {
   }
 
   @Test
-  void headSituation_detachedHead() throws GitAPIException, IOException {
+  void headSituation_detachedHead() throws GitAPIException {
 
     // Given
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
     RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
     git.checkout().setName(givenCommit.getName()).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -112,7 +111,7 @@ class GitSituationTest {
   }
 
   @Test
-  void headSituation_detachedHeadWithTag() throws GitAPIException, IOException {
+  void headSituation_detachedHeadWithTag() throws GitAPIException {
 
     // Given
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
@@ -121,7 +120,7 @@ class GitSituationTest {
     git.tag().setName(givenTag).setObjectId(givenCommit).call();
     git.checkout().setName(givenTag).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -137,7 +136,7 @@ class GitSituationTest {
   }
 
   @Test
-  void situation_annotatedTagOnMaster() throws Exception, IOException {
+  void situation_annotatedTagOnMaster() throws Exception {
 
     // Given
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
@@ -146,7 +145,7 @@ class GitSituationTest {
     String givenTag = "v1";
     git.tag().setAnnotated(true).setName(givenTag).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -172,7 +171,7 @@ class GitSituationTest {
     git.tag().setAnnotated(true).setName(givenTag).setObjectId(givenCommit).call();
     git.checkout().setName(givenTag).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -197,7 +196,7 @@ class GitSituationTest {
     String givenTag = "v1";
     git.tag().setAnnotated(false).setName(givenTag).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -223,7 +222,7 @@ class GitSituationTest {
     git.tag().setAnnotated(false).setName(givenTag).call();
     git.checkout().setName(givenTag).call();
 
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     // Then
     assertThat(situation)
@@ -239,10 +238,10 @@ class GitSituationTest {
   }
 
   @Test
-  void withBranch_normalizesRefs() throws GitAPIException, IOException {
+  void withBranch_normalizesRefs() throws GitAPIException {
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
     git.commit().setMessage("init").setAllowEmpty(true).call();
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     assertThat(situation.withBranch("refs/heads/feature/x").getBranch()).isEqualTo("feature/x");
     assertThat(situation.withBranch("refs/pull/7/head").getBranch()).isEqualTo("pull/7/head");
@@ -254,11 +253,11 @@ class GitSituationTest {
   }
 
   @Test
-  void withTags_replacesAndAddsTags() throws GitAPIException, IOException {
+  void withTags_replacesAndAddsTags() throws GitAPIException {
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
     RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
     git.tag().setName("v1").setObjectId(givenCommit).call();
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     assertThat(situation.withAddedTag("refs/tags/v2").getTags()).containsExactly("v1", "v2");
     assertThat(situation.withTags(List.of("refs/tags/v3")).getTags()).containsExactly("v3");
@@ -268,14 +267,14 @@ class GitSituationTest {
   }
 
   @Test
-  void withDescribeOptions_describesAgainstMatchingTags() throws GitAPIException, IOException {
+  void withDescribeOptions_describesAgainstMatchingTags() throws GitAPIException {
     Git git = Git.init().setInitialBranch(MASTER).setDirectory(tempDir.toFile()).call();
     RevCommit tagged = git.commit().setMessage("one").setAllowEmpty(true).call();
     git.tag().setName("v1.0.0").setObjectId(tagged).call();
     RevCommit otherTagged = git.commit().setMessage("two").setAllowEmpty(true).call();
     git.tag().setName("other").setObjectId(otherTagged).call();
     git.commit().setMessage("three").setAllowEmpty(true).call();
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
 
     assertThat(situation.getDescription().tag()).isEqualTo("other");
     GitDescription description =

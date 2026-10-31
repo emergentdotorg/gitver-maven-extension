@@ -21,6 +21,7 @@ import org.apache.maven.model.ModelBase;
 import org.apache.maven.model.Profile;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.emergent.gitver.util.GitverException;
 import org.emergent.gitver.util.Memoized;
 import org.jspecify.annotations.Nullable;
 
@@ -36,17 +37,25 @@ final class MavenUtil {
               properties.load(is);
               return properties;
             } catch (IOException e) {
-              throw new RuntimeException(e);
+              throw new GitverException("Failed to read " + Constants.GITVER_PROPERTIES_PATH, e);
             }
           });
 
-  static Model readModel(File pomFile) throws IOException {
+  static Model readModel(File pomFile) {
     try (FileReader fileReader = new FileReader(pomFile, StandardCharsets.UTF_8)) {
       Model model = new MavenXpp3Reader().read(fileReader);
       model.setPomFile(pomFile);
       return model;
-    } catch (XmlPullParserException e) {
-      throw new RuntimeException(e);
+    } catch (IOException | XmlPullParserException e) {
+      throw new GitverException("Failed to read " + pomFile, e);
+    }
+  }
+
+  static File canonicalFile(File file) {
+    try {
+      return file.getCanonicalFile();
+    } catch (IOException e) {
+      throw new GitverException("Failed to resolve " + file, e);
     }
   }
 
@@ -58,24 +67,25 @@ final class MavenUtil {
     return modulePomFile;
   }
 
-  public static void writeXml(File file, Document gitVersionedPom) throws IOException {
-    String xml = gitVersionedPom.toXML();
-    byte[] gitVersionedPomBytes = xml.getBytes(StandardCharsets.UTF_8);
-    if (file.exists()) {
-      byte[] existingPomBytes = readAllBytes(file.toPath());
-      if (Arrays.equals(gitVersionedPomBytes, existingPomBytes)) {
-        // do not write if there is no change
-        return;
+  public static void writeXml(File file, Document gitVersionedPom) {
+    byte[] gitVersionedPomBytes = gitVersionedPom.toXML().getBytes(StandardCharsets.UTF_8);
+    try {
+      // do not write if there is no change
+      if (!file.exists() || !Arrays.equals(gitVersionedPomBytes, readAllBytes(file.toPath()))) {
+        Files.write(file.toPath(), gitVersionedPomBytes);
       }
+    } catch (IOException e) {
+      throw new GitverException("Failed to write " + file, e);
     }
-
-    Files.write(file.toPath(), gitVersionedPomBytes);
   }
 
-  public static Document readXml(File file) throws IOException {
-    String pomXml = new String(readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-    XMLParser parser = new XMLParser();
-    return parser.parse(new XMLStringSource(pomXml));
+  public static Document readXml(File file) {
+    try {
+      String pomXml = new String(readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+      return new XMLParser().parse(new XMLStringSource(pomXml));
+    } catch (IOException e) {
+      throw new GitverException("Failed to read " + file, e);
+    }
   }
 
   public static @Nullable BuildBase getBuild(ModelBase model) {

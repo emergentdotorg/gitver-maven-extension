@@ -132,7 +132,7 @@ class VersionPlaceholdersTest {
   }
 
   private Map<String, Supplier<String>> global(RefConfig ref, String refName) throws Exception {
-    GitSituation situation = new GitSituation(git.getRepository());
+    GitSituation situation = GitSituation.find(tempDir.toFile()).orElseThrow();
     GitVersionDetails details = new GitVersionDetails(situation.getRev(), refName, ref);
     GitverSession session = new GitverSession(BUILD_START, new DefaultMavenExecutionRequest());
     return VersionPlaceholders.global(situation, details, session);

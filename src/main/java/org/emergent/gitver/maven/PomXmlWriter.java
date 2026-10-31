@@ -9,7 +9,6 @@ import static org.emergent.gitver.maven.MavenUtil.writeXml;
 import de.pdark.decentxml.Document;
 import de.pdark.decentxml.Element;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +41,7 @@ final class PomXmlWriter {
    *
    * @return the written file
    */
-  static File write(Model projectModel, File locatedPom) throws IOException {
+  static File write(Model projectModel, File locatedPom) {
     Model model = projectModel.clone();
 
     File versionedPomFile = new File(model.getProjectDirectory(), GITVER_POM_NAME);

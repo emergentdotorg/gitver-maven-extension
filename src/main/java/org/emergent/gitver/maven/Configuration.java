@@ -3,7 +3,6 @@ package org.emergent.gitver.maven;
 import static java.util.Objects.requireNonNull;
 import static org.emergent.gitver.git.GitRefType.COMMIT;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -24,12 +23,11 @@ public class Configuration {
 
   private static final Supplier<Configuration> DEFAULT_SUPPLIER =
       Memoized.by(
-          Throwing.wrap(
-              () -> {
-                String name = "schema/gitver-defaults.xml";
-                ClassLoader loader = Configuration.class.getClassLoader();
-                return ConfigurationXmlReader.read(requireNonNull(loader.getResource(name)));
-              }));
+          () -> {
+            String name = "schema/gitver-defaults.xml";
+            ClassLoader loader = Configuration.class.getClassLoader();
+            return ConfigurationXmlReader.read(requireNonNull(loader.getResource(name)));
+          });
 
   @Default boolean disable = false;
   @Default boolean considerTagsOnBranches = false;
@@ -45,11 +43,13 @@ public class Configuration {
   /**
    * @return the configuration in <code>configFile</code>, or the defaults if it does not exist
    */
-  public static Configuration readOrDefault(Path configFile) throws IOException {
+  public static Configuration readOrDefault(Path configFile) {
     Configuration defs = getDefault();
-    return !Files.isRegularFile(configFile)
-        ? defs
-        : ConfigurationXmlReader.read(Files.readString(configFile), defs);
+    if (!Files.isRegularFile(configFile)) {
+      return defs;
+    }
+    String content = Throwing.get(() -> Files.readString(configFile));
+    return ConfigurationXmlReader.read(content, defs);
   }
 
   public Optional<String> getProjectVersionPattern() {

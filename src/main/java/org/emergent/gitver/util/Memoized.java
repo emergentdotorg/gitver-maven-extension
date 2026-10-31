@@ -1,6 +1,5 @@
 package org.emergent.gitver.util;
 
-import com.pivovarit.function.ThrowingSupplier;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -29,10 +28,6 @@ public class Memoized<T> implements Supplier<T>, Serializable {
 
   public static <T> Memoized<T> by(Supplier<T> delegate) {
     return (delegate instanceof Memoized<T> memo) ? memo : new Memoized<>(delegate);
-  }
-
-  public static <T> Memoized<T> byThrowing(ThrowingSupplier<T, Exception> delegate) {
-    return by(Throwing.sneaky(delegate));
   }
 
   @Override

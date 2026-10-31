@@ -1,12 +1,10 @@
 package org.emergent.gitver.git;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.lib.Repository;
 import org.emergent.gitver.maven.CommandOptions;
 import org.emergent.gitver.util.StringUtil;
 import org.jspecify.annotations.Nullable;
@@ -33,12 +31,12 @@ public class GitSituationFactory {
   /**
    * @return the situation of the repository containing the pom, or null if there is none
    */
-  public @Nullable GitSituation create(File pomFile) throws IOException {
-    Optional<Repository> repository = GitUtil.getRepository(pomFile.getParentFile());
-    if (repository.isEmpty()) {
+  public @Nullable GitSituation create(File pomFile) {
+    Optional<GitSituation> found = GitSituation.find(pomFile.getParentFile());
+    if (found.isEmpty()) {
       return null;
     }
-    GitSituation situation = new GitSituation(repository.get());
+    GitSituation situation = found.get();
     Optional<GitSituation> fromOptions = fromCommandOptions(situation);
     if (fromOptions.isPresent()) {
       return fromOptions.get();

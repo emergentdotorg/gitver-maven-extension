@@ -20,7 +20,9 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.building.ModelProcessor;
 import org.codehaus.plexus.util.StringUtils;
 import org.emergent.gitver.git.GitSituationFactory;
+import org.emergent.gitver.util.GitverException;
 import org.emergent.gitver.util.Memoized;
+import org.emergent.gitver.util.Throwing;
 
 /**
  * Maven entry point. Decides which models to version and orchestrates the three steps, each of
@@ -85,11 +87,16 @@ public class GitverModelProcessor implements ModelProcessor {
   }
 
   public Model processModel(Model projectModel, Map<String, ?> options) throws IOException {
-    // clone model before return to prevent concurrency issues
-    return processModel0(projectModel, options).clone();
+    try {
+      // clone model before return to prevent concurrency issues
+      return processModel0(projectModel, options).clone();
+    } catch (GitverException e) {
+      // maven reports an IOException as a problem reading this pom, rather than as a crash
+      throw new IOException(e.getMessage(), e);
+    }
   }
 
-  private Model processModel0(Model projectModel, Map<String, ?> options) throws IOException {
+  private Model processModel0(Model projectModel, Map<String, ?> options) {
     // set model pom file
     Source pomSource = (Source) options.get(ModelProcessor.SOURCE);
     if (pomSource != null) {
@@ -122,7 +129,7 @@ public class GitverModelProcessor implements ModelProcessor {
       return projectModel;
     }
 
-    File canonicalProjectPomFile = projectModel.getPomFile().getCanonicalFile();
+    File canonicalProjectPomFile = MavenUtil.canonicalFile(projectModel.getPomFile());
 
     // return cached calculated project model if present
     Model cachedProjectModel = sessionModelCache.get(canonicalProjectPomFile);
@@ -145,8 +152,12 @@ public class GitverModelProcessor implements ModelProcessor {
     File gitVersionedPomFile = PomXmlWriter.write(projectModel, locatedPom);
     if (ctx.updateSourcePom()) {
       log.debug("updating original POM file");
-      Files.copy(
-          gitVersionedPomFile.toPath(), locatedPom.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      Throwing.get(
+          () ->
+              Files.copy(
+                  gitVersionedPomFile.toPath(),
+                  locatedPom.toPath(),
+                  StandardCopyOption.REPLACE_EXISTING));
     }
 
     // git versioned pom can't be set as model pom right away, because it will break plugins, that
@@ -162,7 +173,7 @@ public class GitverModelProcessor implements ModelProcessor {
     return projectModel;
   }
 
-  private Optional<GitverContext> createContext(Model projectModel) throws IOException {
+  private Optional<GitverContext> createContext(Model projectModel) {
     if (log.isInfoEnabled()) {
       log.info("");
       log.info(LogHeaders.extension(MavenUtil.gitverCoords()));

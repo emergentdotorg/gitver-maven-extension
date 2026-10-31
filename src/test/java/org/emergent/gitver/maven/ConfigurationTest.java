@@ -1,11 +1,15 @@
 package org.emergent.gitver.maven;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.file.Path;
 import java.util.List;
 import org.emergent.gitver.git.GitRefType;
 import org.emergent.gitver.maven.Configuration.RefConfig;
+import org.emergent.gitver.util.GitverException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ConfigurationTest {
 
@@ -55,5 +59,18 @@ class ConfigurationTest {
         refDef.toBuilder().setType(GitRefType.COMMIT).setVersion("${commit}-SNAPSHOT").build();
 
     assertThat(refs.get(2)).isEqualTo(refCommit);
+  }
+
+  @Test
+  void read_malformedXml() {
+    assertThatThrownBy(() -> ConfigurationXmlReader.read("<configuration>"))
+        .isInstanceOf(GitverException.class)
+        .hasMessageStartingWith("Failed to parse configuration");
+  }
+
+  @Test
+  void readOrDefault_missingFile(@TempDir Path tempDir) {
+    assertThat(Configuration.readOrDefault(tempDir.resolve("absent.xml")))
+        .isSameAs(Configuration.getDefault());
   }
 }

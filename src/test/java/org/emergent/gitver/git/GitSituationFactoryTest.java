@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -36,35 +35,35 @@ class GitSituationFactoryTest {
   }
 
   @Test
-  void create_outsideRepository() throws IOException {
+  void create_outsideRepository() {
     File pomFile = new File(tempDir.getRoot().toFile(), "pom.xml");
     // the file system root is not inside a git repository
     assertThat(create(Map.of(), Map.of(), pomFile)).isNull();
   }
 
   @Test
-  void create_fromRepository() throws IOException {
+  void create_fromRepository() {
     GitSituation situation = create(Map.of(), Map.of());
     assertThat(situation.getBranch()).isEqualTo(MASTER);
     assertThat(situation.getRev()).isEqualTo(head.getName());
   }
 
   @Test
-  void create_branchAndTagOptions() throws IOException {
+  void create_branchAndTagOptions() {
     GitSituation situation = create(Map.of("git.branch", " feature ", "git.tag", "v1"), Map.of());
     assertThat(situation.getBranch()).isEqualTo("feature");
     assertThat(situation.getTags()).containsExactly("v1");
   }
 
   @Test
-  void create_tagRefOption() throws IOException {
+  void create_tagRefOption() {
     GitSituation situation = create(Map.of("git.ref", "refs/tags/v2"), Map.of());
     assertThat(situation.isDetached()).isTrue();
     assertThat(situation.getTags()).containsExactly("v2");
   }
 
   @Test
-  void create_branchRefOption() throws IOException {
+  void create_branchRefOption() {
     GitSituation situation = create(Map.of("git.ref", "refs/heads/release"), Map.of());
     assertThat(situation.getBranch()).isEqualTo("release");
     assertThat(situation.getTags()).isEmpty();
@@ -77,20 +76,20 @@ class GitSituationFactoryTest {
   }
 
   @Test
-  void create_ciEnvironmentIgnoredOnBranch() throws IOException {
+  void create_ciEnvironmentIgnoredOnBranch() {
     GitSituation situation = create(Map.of(), gitHub("refs/heads/feature"));
     assertThat(situation.getBranch()).isEqualTo(MASTER);
   }
 
   @Test
-  void create_gitHubBranchWhenDetached() throws IOException, GitAPIException {
+  void create_gitHubBranchWhenDetached() throws GitAPIException {
     detach();
     GitSituation situation = create(Map.of(), gitHub("refs/pull/7/merge"));
     assertThat(situation.getBranch()).isEqualTo("pull/7/merge");
   }
 
   @Test
-  void create_gitHubTagWhenDetached() throws IOException, GitAPIException {
+  void create_gitHubTagWhenDetached() throws GitAPIException {
     detach();
     GitSituation situation = create(Map.of(), gitHub("refs/tags/v3"));
     assertThat(situation.isDetached()).isTrue();
@@ -98,7 +97,7 @@ class GitSituationFactoryTest {
   }
 
   @Test
-  void create_ciEnvironmentForOtherCommitIgnored() throws IOException, GitAPIException {
+  void create_ciEnvironmentForOtherCommitIgnored() throws GitAPIException {
     detach();
     Map<String, String> env =
         Map.of("GITHUB_ACTIONS", "true", "GITHUB_SHA", "abc", "GITHUB_REF", "refs/heads/x");
@@ -106,7 +105,7 @@ class GitSituationFactoryTest {
   }
 
   @Test
-  void create_gitLabMergeRequestBranch() throws IOException, GitAPIException {
+  void create_gitLabMergeRequestBranch() throws GitAPIException {
     detach();
     Map<String, String> env =
         Map.of(
@@ -117,7 +116,7 @@ class GitSituationFactoryTest {
   }
 
   @Test
-  void create_jenkinsTagBuild() throws IOException, GitAPIException {
+  void create_jenkinsTagBuild() throws GitAPIException {
     detach();
     Map<String, String> env =
         Map.of(
@@ -138,14 +137,12 @@ class GitSituationFactoryTest {
     git.checkout().setName(head.getName()).call();
   }
 
-  private GitSituation create(Map<String, String> userProperties, Map<String, String> env)
-      throws IOException {
+  private GitSituation create(Map<String, String> userProperties, Map<String, String> env) {
     return requireNonNull(create(userProperties, env, tempDir.resolve("pom.xml").toFile()));
   }
 
   private static @Nullable GitSituation create(
-      Map<String, String> userProperties, Map<String, String> env, File pomFile)
-      throws IOException {
+      Map<String, String> userProperties, Map<String, String> env, File pomFile) {
     MavenExecutionRequest request = new DefaultMavenExecutionRequest();
     userProperties.forEach(request.getUserProperties()::setProperty);
     CommandOptions options = new CommandOptions(new GitverSession(Instant.now(), request));

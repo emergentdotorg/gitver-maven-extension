@@ -17,6 +17,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.emergent.gitver.git.GitRefType;
 import org.emergent.gitver.maven.Configuration.RefConfig;
+import org.emergent.gitver.util.GitverException;
 import org.emergent.gitver.util.StringUtil;
 import org.jspecify.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -27,34 +28,35 @@ import org.xml.sax.SAXException;
 
 final class ConfigurationXmlReader {
 
-  public static Configuration read(URL resource) throws IOException {
+  public static Configuration read(URL resource) {
     try (InputStream is = resource.openStream()) {
       return read(new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      throw new GitverException("Failed to read configuration " + resource, e);
     }
   }
 
-  public static Configuration read(String content) throws IOException {
+  public static Configuration read(String content) {
     return read(content, null);
   }
 
-  static Configuration read(String content, @Nullable Configuration defs) throws IOException {
+  static Configuration read(String content, @Nullable Configuration defs) {
     return readFrom(parse(content).getDocumentElement(), defs);
   }
 
-  private static Document parse(String content) throws IOException {
+  private static Document parse(String content) {
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       factory.setExpandEntityReferences(false);
       return factory.newDocumentBuilder().parse(new InputSource(new StringReader(content)));
-    } catch (ParserConfigurationException | SAXException e) {
-      throw new IOException("Failed to parse configuration: " + e.getMessage(), e);
+    } catch (IOException | ParserConfigurationException | SAXException e) {
+      throw new GitverException("Failed to parse configuration: " + e.getMessage(), e);
     }
   }
 
-  private static Configuration readFrom(Element element, @Nullable Configuration defs)
-      throws IOException {
+  private static Configuration readFrom(Element element, @Nullable Configuration defs) {
     Configuration.Builder builder = Configuration.builder();
 
     Optional.ofNullable(childText(element, "disable"))
