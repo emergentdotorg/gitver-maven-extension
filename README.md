@@ -18,7 +18,7 @@ Register the extension in `.mvn/extensions.xml`:
   <extension>
     <groupId>lol.wud.gitver</groupId>
     <artifactId>gitver-maven-extension</artifactId>
-    <version>0.9.0</version>
+    <version>0.0.1</version>
   </extension>
 </extensions>
 ```
