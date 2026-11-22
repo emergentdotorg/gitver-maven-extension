@@ -45,7 +45,7 @@ final class GitverContextFactory {
         VersionFormatter formatter = new VersionFormatter(gitSituation);
 
         RelatedProjects relatedProjects =
-                RelatedProjects.create(projectModel, mvnDirectory, gitSituation.getRootDirectory());
+                RelatedProjects.create(projectModel, mvnDirectory.toPath(), gitSituation.getRootDirectory());
         if (log.isDebugEnabled()) {
             log.debug(MessageUtils.buffer().strong("related projects:").build());
             relatedProjects.coords().forEach(gav -> log.debug("  {}", gav));

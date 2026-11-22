@@ -24,6 +24,10 @@ record RelatedProjects(Set<Coords> coords) {
         coords = Collections.unmodifiableSortedSet(new TreeSet<>(coords));
     }
 
+    public static RelatedProjects create(Model projectModel, Path mvnDir, Path gitRoot) {
+        return create(projectModel, mvnDir.toFile(), gitRoot.toFile());
+    }
+
     public static RelatedProjects create(Model projectModel, File mvnDir, File gitRoot) {
         Set<Coords> coords = new HashSet<>();
         collect(coords, IOUtil.canonicalPath(mvnDir.getParentFile()), IOUtil.canonicalPath(gitRoot), projectModel);
@@ -43,8 +47,7 @@ record RelatedProjects(Set<Coords> coords) {
 
         Optional.ofNullable(projectModel.getParent())
                 .map(Parent::getRelativePath)
-                .map(relpath -> MavenUtil.pomFile(projectModel.getProjectDirectory(), relpath)
-                        .toPath())
+                .map(relpath -> MavenUtil.pomFile(projectModel.getProjectDirectory(), relpath).toPath())
                 .filter(Files::isRegularFile)
                 .filter(isRelated)
                 .map(MavenUtil::readModel)

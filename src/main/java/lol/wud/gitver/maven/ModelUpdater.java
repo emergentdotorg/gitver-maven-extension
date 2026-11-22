@@ -2,6 +2,7 @@ package lol.wud.gitver.maven;
 
 import static lol.wud.gitver.maven.MavenUtil.getBuild;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -56,15 +57,13 @@ final class ModelUpdater {
 
     private void addGitProperties(Model projectModel) {
         Properties properties = projectModel.getProperties();
-        String commit = gitSituation.getRev();
-        // ZonedDateTime commitTime = gitSituation.getTimestamp();
-        String refName = gitSituation.getRefName();
-        properties.putIfAbsent(
-                "git.worktree", gitSituation.getRootDirectory().getAbsolutePath());
-        properties.putIfAbsent("git.commit", commit);
-        properties.putIfAbsent("git.commit.short", commit.substring(0, 7));
-        // properties.putIfAbsent("git.commit.timestamp", String.valueOf(commitTime.toEpochSecond()));
-        // properties.putIfAbsent("git.commit.timestamp.datetime", VersionUtil.isoTimestamp(commitTime));
+        ZonedDateTime commitTime = gitSituation.getTimestamp();
+        String refName = gitSituation.refName();
+        properties.putIfAbsent("git.worktree", gitSituation.directory());
+        properties.putIfAbsent("git.commit", gitSituation.commit());
+        properties.putIfAbsent("git.commit.short", gitSituation.shortCommit());
+        properties.putIfAbsent("git.commit.timestamp", String.valueOf(commitTime.toEpochSecond()));
+        properties.putIfAbsent("git.commit.timestamp.datetime", VersionUtil.isoTimestamp(commitTime));
         properties.putIfAbsent("git.ref", refName);
         properties.putIfAbsent("git.ref.slug", VersionUtil.slugify(refName));
     }

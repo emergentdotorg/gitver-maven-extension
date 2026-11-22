@@ -50,6 +50,6 @@ public class Memoized<T> implements Supplier<T>, Serializable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(" + delegate + ")";
+        return getClass().getSimpleName() + "(" + get() + ")";
     }
 }

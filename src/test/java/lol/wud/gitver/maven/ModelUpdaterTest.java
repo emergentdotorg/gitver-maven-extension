@@ -99,8 +99,8 @@ class ModelUpdaterTest {
 
     private ModelUpdater updater() throws Exception {
         GitverSession session = new GitverSession(Instant.now(), new DefaultMavenExecutionRequest());
-        RelatedProjects related =
-                RelatedProjects.create(model(), new File(tempDir.toFile(), ".mvn"), situation.getRootDirectory());
+        Path mvnDir =  tempDir.resolve(".mvn");
+        RelatedProjects related = RelatedProjects.create(model(), mvnDir, situation.getRootDirectory());
         return new ModelUpdater(new VersionFormatter(situation), related, situation, session);
     }
 

@@ -35,7 +35,7 @@ class GitSituationFactoryTest {
     @Test
     void create_fromRepository() throws Exception {
         GitSituation situation = create(Map.of(), Map.of());
-        assertThat(situation.getRootDirectory().toPath().toRealPath()).isEqualTo(tempDir.toRealPath());
+        assertThat(situation.getRootDirectory().toRealPath()).isEqualTo(tempDir.toRealPath());
         assertThat(situation.getDescription().tag()).isEqualTo("root");
     }
 

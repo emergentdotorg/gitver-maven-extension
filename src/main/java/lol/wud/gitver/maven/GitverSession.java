@@ -28,14 +28,6 @@ record GitverSession(
         return new GitverSession(session.getStartTime().toInstant(), session.getRequest());
     }
 
-    public Properties userProperties() {
-        return request.getUserProperties();
-    }
-
-    public Properties systemProperties() {
-        return request.getSystemProperties();
-    }
-
     /**
      * The project version to log. A <code>${revision}</code> version is shown resolved: from the
      * session, the model, or else the value of a project processed earlier, typically the parent.

@@ -1,14 +1,27 @@
 package lol.wud.gitver.git;
 
-public record GitDescription(String commit, String tag, int distance, boolean dirty) {
+public record GitDescription(String commit, String tag, int distance) {
 
-    public GitDescription(String commit, String tag, int distance) {
-        this(commit, tag, distance, false);
-    }
+    /** The commit of a repository that has none yet. */
+    public static final String NO_COMMIT = "0".repeat(40);
+
+    public static final String ROOT_TAG = "root";
 
     @Override
     public String toString() {
-        String gstr = commit.substring(0, Math.min(7, commit.length()));
-        return tag + "-" + distance + "-g" + gstr + (dirty ? "-dirty" : "");
+        return tag + "-" + distance + "-g" + shortCommit();
+    }
+
+    public boolean isPlainTag() {
+        // return !GIT_TAG_PATTERN.asMatchPredicate().test(description);
+        return ROOT_TAG.equals(tag);
+    }
+
+    public String shortCommit() {
+        return shorten(commit);
+    }
+
+    private static String shorten(String commit) {
+        return commit.substring(0, Math.min(7, commit.length()));
     }
 }
