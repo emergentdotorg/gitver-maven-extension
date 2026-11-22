@@ -1,7 +1,7 @@
 import java.time.Instant
 
 String originalVer = "0.0.1-SNAPSHOT"
-String expectedVer = "1.0.1-development-SNAPSHOT"
+String expectedVer = "1.0.0"
 
 def baseDir = new File("$basedir")
 def repoDir = new File("$localRepositoryPath")

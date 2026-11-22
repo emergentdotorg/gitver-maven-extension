@@ -14,21 +14,21 @@ import org.jspecify.annotations.Nullable;
 @Named("gitver-session")
 public class GitverSessionHolder {
 
-  private volatile @Nullable GitverSessionState state;
+    private volatile @Nullable SessionState state;
 
-  /** Starts a session, discarding anything left from a previous one. */
-  void start(GitverSession session) {
-    state = new GitverSessionState(session);
-  }
+    /** Starts a session, discarding anything left from a previous one. */
+    void start(GitverSession session) {
+        state = new SessionState(session);
+    }
 
-  void end() {
-    state = null;
-  }
+    void end() {
+        state = null;
+    }
 
-  /**
-   * @return the state of the running session, or empty outside a session
-   */
-  Optional<GitverSessionState> current() {
-    return Optional.ofNullable(state);
-  }
+    /**
+     * @return the state of the running session, or empty outside a session
+     */
+    Optional<SessionState> current() {
+        return Optional.ofNullable(state);
+    }
 }

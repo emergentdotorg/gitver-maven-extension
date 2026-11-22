@@ -1,9 +1,14 @@
 package lol.wud.gitver.git;
 
-public record GitDescription(String commit, String tag, int distance) {
+public record GitDescription(String commit, String tag, int distance, boolean dirty) {
 
-  @Override
-  public String toString() {
-    return tag + "-" + distance + "-g" + commit.substring(0, 7);
-  }
+    public GitDescription(String commit, String tag, int distance) {
+        this(commit, tag, distance, false);
+    }
+
+    @Override
+    public String toString() {
+        String gstr = commit.substring(0, Math.min(7, commit.length()));
+        return tag + "-" + distance + "-g" + gstr + (dirty ? "-dirty" : "");
+    }
 }

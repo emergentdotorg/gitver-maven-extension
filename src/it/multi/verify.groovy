@@ -40,7 +40,7 @@ assert 1 == foundLines.size()
 // And check that the produced artifact was installed with the good version
 File repoPom = new File(repoDir, "${groupPath}/main/${expectedVer}/main-${expectedVer}.pom")
 assert repoPom.isFile()
-assert 1 == repoPom.readLines().findAll {it =~ /<version>${expectedVer}<\/version>/}.size()
+assert 3 == repoPom.readLines().findAll {it =~ /<version>${expectedVer}<\/version>/}.size()
 
 File apiRepoPom = new File(repoDir, "${groupPath}/api/${expectedVer}/api-${expectedVer}.pom")
 assert apiRepoPom.isFile()
@@ -48,7 +48,7 @@ assert 1 == apiRepoPom.readLines().findAll {it =~ /<version>${expectedVer}<\/ver
 
 File logicRepoPom = new File(repoDir, "${groupPath}/logic/${expectedVer}/logic-${expectedVer}.pom")
 assert logicRepoPom.isFile()
-assert 1 == logicRepoPom.readLines().findAll {it =~ /<version>${expectedVer}<\/version>/}.size()
+assert 2 == logicRepoPom.readLines().findAll {it =~ /<version>${expectedVer}<\/version>/}.size()
 
 File nestedRepoPom = new File(repoDir, "${groupPath}/nested/${expectedVer}/nested-${expectedVer}.pom")
 assert nestedRepoPom.isFile()

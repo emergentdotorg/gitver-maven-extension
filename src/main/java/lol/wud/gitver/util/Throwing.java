@@ -1,22 +1,30 @@
 package lol.wud.gitver.util;
 
 import com.pivovarit.function.ThrowingSupplier;
-import java.util.function.Supplier;
+import com.pivovarit.function.exception.WrappedException;
 
-/** Adapts code that throws checked exceptions to unchecked {@link GitverException}s. */
+/**
+ * Adapts code that throws checked exceptions to unchecked {@link
+ * com.pivovarit.function.exception.WrappedException}s.
+ */
 public final class Throwing {
 
-  private Throwing() {}
+    private Throwing() {}
 
-  public static <T, E extends Exception> T get(ThrowingSupplier<T, E> supplier) {
-    try {
-      return supplier.get();
-    } catch (Exception e) {
-      throw GitverException.wrap(e);
+    public static <T, E extends Exception> T uncheck(ThrowingSupplier<T, E> supplier) {
+        try {
+            return supplier.uncheck().get();
+        } catch (WrappedException ex) {
+            throw unwrap(ex);
+        }
     }
-  }
 
-  public static <T, E extends Exception> Supplier<T> wrap(ThrowingSupplier<T, E> supplier) {
-    return () -> get(supplier);
-  }
+    private static RuntimeException unwrap(Exception e) {
+        Throwable cause = e;
+        while (cause instanceof WrappedException we && we.getCause() != null) {
+            cause = we.getCause();
+        }
+        if (cause instanceof RuntimeException re) return re;
+        return new GitverException(cause);
+    }
 }

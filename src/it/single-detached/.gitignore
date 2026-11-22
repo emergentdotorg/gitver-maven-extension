@@ -1,0 +1,3 @@
+target/
+.gitver-pom.xml
+*.log
